@@ -3,7 +3,8 @@
  * POST /.netlify/functions/cloudinary   Authorization: Bearer <Firebase ID token>
  *   { action: 'sign',   resourceType: 'image' | 'video' | 'raw' } -> upload signature ('raw' = resume PDFs)
  *   { action: 'sign',   resourceType: 'logo', variant: 'default' | 'hover' } -> tech-stack logo signature
- *   { action: 'verify', resourceType, publicId }                -> checked asset metadata (bad uploads are deleted)
+ *   { action: 'upload-svg', resourceType: 'logo', variant, name, svg } -> raw SVG code, prepared and uploaded here
+ *   { action: 'verify', resourceType, publicId }              -> checked asset metadata (bad uploads are deleted)
  *   { action: 'delete', resourceType, publicId }                -> removes an asset in the portfolio folder
  *
  * Folder structure (root = CLOUDINARY_FOLDER, default "PortFolio"):
@@ -54,6 +55,25 @@ function cloudinaryCredentials(env) {
     apiKey: env.CLOUDINARY_API_KEY || fromUrl[1],
     apiSecret: env.CLOUDINARY_API_SECRET || (fromUrl[2] && decodeURIComponent(fromUrl[2])),
   };
+}
+
+const slugName = (name) =>
+  String(name || 'logo').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 40) || 'logo';
+
+// Turns pasted SVG code into a file Cloudinary accepts as an image. Cloudinary refuses an SVG
+// ("Raw file format svg not allowed") unless it has the SVG namespace and an XML declaration.
+// Also rejects anything that is not plain, script-free SVG.
+function prepareSvg(input, maxBytes) {
+  let svg = String(input || '').trim().replace(/^<\?xml[^>]*\?>\s*/i, '');
+  if (!/^<svg[\s>]/i.test(svg) || !/<\/svg>\s*$/i.test(svg)) throw new HttpError(400, 'The SVG looks incomplete. Paste everything from <svg to </svg>.');
+  if (/<script|<foreignObject|\son[a-z]+\s*=|javascript:/i.test(svg)) throw new HttpError(400, 'This SVG contains scripts or event handlers. Use a plain SVG.');
+  if (Buffer.byteLength(svg) > maxBytes) throw new HttpError(413, `The SVG is too large (max ${maxBytes / 1024 / 1024} MB).`);
+  const open = /^<svg\b[^>]*>/i.exec(svg)[0];
+  let extra = '';
+  if (!/\sxmlns\s*=/i.test(open)) extra += ' xmlns="http://www.w3.org/2000/svg"';
+  if (/xlink:/i.test(svg) && !/\sxmlns:xlink\s*=/i.test(open)) extra += ' xmlns:xlink="http://www.w3.org/1999/xlink"';
+  if (extra) svg = svg.replace(/^<svg\b/i, `<svg${extra}`);
+  return `<?xml version="1.0" encoding="UTF-8"?>\n${svg}`;
 }
 
 class HttpError extends Error {
@@ -195,6 +215,27 @@ function createHandler({ fetch = globalThis.fetch, env = process.env, now = () =
         });
       }
 
+      // Raw SVG code from the admin: made Cloudinary-ready here, then uploaded server-side.
+      if (body.action === 'upload-svg') {
+        if (body.resourceType !== 'logo') throw new HttpError(400, 'Unsupported media type.');
+        if (!limits.variants.includes(body.variant)) throw new HttpError(400, 'Unknown logo variant.');
+        const svg = prepareSvg(body.svg, limits.maxBytes);
+        const params = {
+          allowed_formats: limits.formats.join(','),
+          folder: `${folder}/${limits.subfolder}/${body.variant}`,
+          timestamp: Math.floor(now() / 1000),
+        };
+        const form = new FormData();
+        form.append('file', new Blob([svg], { type: 'image/svg+xml' }), `${slugName(body.name)}.svg`);
+        form.append('api_key', apiKey);
+        Object.entries(params).forEach(([key, value]) => form.append(key, String(value)));
+        form.append('signature', cloudinarySignature(params, apiSecret));
+        const res = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, { method: 'POST', body: form });
+        const uploaded = await res.json().catch(() => ({}));
+        if (!res.ok) throw new HttpError(422, `Cloudinary rejected the SVG: ${uploaded.error?.message || res.status}`);
+        return json(200, { publicId: uploaded.public_id, url: uploaded.secure_url, format: uploaded.format, bytes: uploaded.bytes });
+      }
+
       const publicId = body.publicId;
       if (typeof publicId !== 'string' || !publicId || publicId.length > 255 || publicId.includes('..') || publicId.startsWith('/')) {
         throw new HttpError(400, 'Invalid asset.');
@@ -282,3 +323,4 @@ exports.createHandler = createHandler;
 exports.cloudinarySignature = cloudinarySignature;
 exports.cloudinaryCredentials = cloudinaryCredentials;
 exports.LIMITS = LIMITS;
+exports.prepareSvg = prepareSvg;

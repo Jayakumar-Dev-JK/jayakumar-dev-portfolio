@@ -196,6 +196,35 @@ test('signs tech-stack logo uploads into a folder per variant', async () => {
   assert.equal((await call(handler, { action: 'sign', resourceType: 'logo' })).status, 400);
 });
 
+test('upload-svg prepares raw SVG code for Cloudinary and uploads it server-side', async () => {
+  const uploads = [];
+  const fetch = async (url, options = {}) => {
+    if (url.endsWith('/image/upload')) {
+      uploads.push(options.body);
+      return response({ public_id: 'PortFolio/tech-stack/default/x1', secure_url: 'https://res.cloudinary.com/demo/image/upload/x1.svg', format: 'svg', bytes: 120 });
+    }
+    if (url.includes('securetoken')) return response({ keys: [jwk] });
+    return response({ fields: { role: { stringValue: 'admin' }, active: { booleanValue: true } } });
+  };
+  const h = createHandler({ fetch, env, now: () => NOW });
+  const res = await call(h, { action: 'upload-svg', resourceType: 'logo', variant: 'default', name: 'UX Pilot', svg: '<svg viewBox="0 0 1 1"><path d="M0 0"/></svg>' });
+  assert.equal(res.status, 200);
+  assert.equal(res.body.publicId, 'PortFolio/tech-stack/default/x1');
+  const form = uploads[0];
+  assert.equal(form.get('folder'), 'PortFolio/tech-stack/default');
+  assert.equal(form.get('api_key'), 'key123');
+  const file = form.get('file');
+  assert.equal(file.name, 'ux-pilot.svg');
+  const text = await file.text();
+  assert.ok(text.startsWith('<?xml version="1.0" encoding="UTF-8"?>\n<svg xmlns="http://www.w3.org/2000/svg" viewBox'));
+  assert.equal(form.get('signature'), cloudinarySignature({ allowed_formats: form.get('allowed_formats'), folder: form.get('folder'), timestamp: form.get('timestamp') }, 'secret456'));
+
+  const bad = (svg, variant = 'default') => call(h, { action: 'upload-svg', resourceType: 'logo', variant, svg });
+  assert.equal((await bad('<svg><script>x</script></svg>')).status, 400);
+  assert.equal((await bad('<svg><path/>')).status, 400);
+  assert.equal((await bad('<svg></svg>', 'other')).status, 400);
+});
+
 test('verifies and deletes logos as Cloudinary image assets', async () => {
   const asset = { public_id: 'PortFolio/tech-stack/hover/abc', asset_folder: 'PortFolio/tech-stack/hover', format: 'svg', bytes: 2048, secure_url: 'https://res.cloudinary.com/demo/image/upload/abc.svg' };
   const { handler, calls } = setup({ asset });

@@ -91,9 +91,8 @@ describe('pasted SVG code', () => {
     await resolveSkillLogos({ name: 'UX Pilot', icon: '', logoDefault: '<svg><path/></svg>', logoHover: '' });
     const file = uploadLogo.mock.calls[0][0];
     expect(file.type).toBe('image/svg+xml');
-    const text = await new Response(file).text();
-    expect(text).toContain('xmlns="http://www.w3.org/2000/svg"');
-    expect(text.startsWith('<?xml version="1.0" encoding="UTF-8"?>')).toBe(true);
+    // The browser sends the SVG as-is; the server adds the XML declaration.
+    expect(await new Response(file).text()).toContain('xmlns="http://www.w3.org/2000/svg"');
   });
 });
 
