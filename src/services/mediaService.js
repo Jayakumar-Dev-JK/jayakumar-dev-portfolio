@@ -115,6 +115,17 @@ export const LOGO_MAX_BYTES = 1024 * 1024;
 
 export async function uploadLogo(source, variant) {
   if (typeof source !== 'string' && source.size > LOGO_MAX_BYTES) throw new Error('Logo files must be 1 MB or smaller.');
+  // Raw SVG code goes to the server as-is: it adds what Cloudinary needs and uploads it.
+  if (typeof source !== 'string') {
+    const uploaded = await callUploadFunction({
+      action: 'upload-svg',
+      resourceType: 'logo',
+      variant,
+      name: (source.name || 'logo').replace(/\.svg$/i, ''),
+      svg: await source.text(),
+    });
+    return { url: uploaded.url, publicId: uploaded.publicId };
+  }
   const signed = await callUploadFunction({ action: 'sign', resourceType: 'logo', variant });
   const form = new FormData();
   form.append('file', source);
