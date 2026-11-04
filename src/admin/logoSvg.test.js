@@ -79,6 +79,24 @@ describe('resolveSkillLogos', () => {
   });
 });
 
+describe('pasted SVG code', () => {
+  it('adds the missing xmlns so Cloudinary and <img> accept it', async () => {
+    expect(parseLogoInput('<svg viewBox="0 0 1 1"><path/></svg>').iconSvg).toBe(
+      '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1 1"><path/></svg>'
+    );
+    const svg = '<svg xmlns="http://www.w3.org/2000/svg"><path/></svg>';
+    expect(parseLogoInput(svg).iconSvg).toBe(svg);
+    expect(parseLogoInput('<svg><use xlink:href="#a"/></svg>').iconSvg).toContain('xmlns:xlink=');
+
+    await resolveSkillLogos({ name: 'UX Pilot', icon: '', logoDefault: '<svg><path/></svg>', logoHover: '' });
+    const file = uploadLogo.mock.calls[0][0];
+    expect(file.type).toBe('image/svg+xml');
+    const text = await new Response(file).text();
+    expect(text).toContain('xmlns="http://www.w3.org/2000/svg"');
+    expect(text.startsWith('<?xml version="1.0" encoding="UTF-8"?>')).toBe(true);
+  });
+});
+
 describe('logo sync helpers', () => {
   it('only shows custom logos in the form', () => {
     expect(logoInputValue({ logoHover: { url: 'u', source: 'custom' } }, 'hover')).toBe('u');

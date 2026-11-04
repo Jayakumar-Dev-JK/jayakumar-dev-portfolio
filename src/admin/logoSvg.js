@@ -21,7 +21,11 @@ export function builtInLogoSvg(iconKey, variant) {
   ).replace(/ aria-hidden="true"| focusable="false"/g, '');
 }
 
-const svgFile = (svg, name) => new File([svg], `${name}.svg`, { type: 'image/svg+xml' });
+// Cloudinary only recognises an SVG as an image (instead of failing with a 400) when the upload
+// restricts allowed_formats if the file starts with an XML declaration, so add one.
+const XML_DECLARATION = '<?xml version="1.0" encoding="UTF-8"?>\n';
+const svgFile = (svg, name) =>
+  new File([svg.startsWith('<?xml') ? svg : XML_DECLARATION + svg], `${name}.svg`, { type: 'image/svg+xml' });
 
 // What the form's logo box should show for an existing skill: only real custom logos.
 export function logoInputValue(skill, variant) {

@@ -55,6 +55,13 @@
   }
 }
 
+/* Sign-in backdrop: ambient light in the existing accent teal (45,212,191) over the app background. */
+.adm-login-backdrop {
+  background:
+    radial-gradient(60% 50% at 50% 0%, rgba(45, 212, 191, 0.1), transparent 70%),
+    radial-gradient(40% 40% at 90% 100%, rgba(45, 212, 191, 0.06), transparent 70%);
+}
+
 /* KPI "navy" tile, used only for the analytics headline numbers. */
 .adm-navy {
   position: relative;

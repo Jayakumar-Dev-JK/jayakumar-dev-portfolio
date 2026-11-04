@@ -33,7 +33,7 @@ describe('parseLogoInput', () => {
   it('splits URLs and SVG code', () => {
     expect(parseLogoInput('')).toEqual({ iconUrl: '', iconSvg: '' });
     expect(parseLogoInput(' https://x.com/a.png ')).toEqual({ iconUrl: 'https://x.com/a.png', iconSvg: '' });
-    expect(parseLogoInput('<svg><path/></svg>')).toEqual({ iconUrl: '', iconSvg: '<svg><path/></svg>' });
+    expect(parseLogoInput('<svg><path/></svg>')).toEqual({ iconUrl: '', iconSvg: '<svg xmlns="http://www.w3.org/2000/svg"><path/></svg>' });
   });
   it('rejects unsafe or broken SVG', () => {
     expect(parseLogoInput('<svg onload="x()"></svg>').error).toBeTruthy();
