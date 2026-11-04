@@ -3,7 +3,8 @@ import { Navigate, Outlet, Route, Routes, useLocation } from 'react-router-dom';
 import { isFirebaseConfigured } from '../lib/firebaseConfig';
 import { isActiveAdmin, requestPasswordReset, signIn, signOutUser, watchAuth } from '../services/authService';
 import { markAdminDevice } from '../services/analyticsService';
-import { Banner, BrandMark, buttonClass, Field, inputClass, OWNER, SessionContext, ToastProvider, useSession } from './ui';
+import { Banner, BrandMark, buttonClass, OWNER, SessionContext, ToastProvider, useSession } from './ui';
+import { ForgotPasswordLink, LoginCard, LoginForm, LoginLayout } from './LoginParts';
 import { ProjectEditor, ProjectsList } from './ProjectsAdmin';
 import CategoriesAdmin from './CategoriesAdmin';
 import AnalyticsAdmin from './AnalyticsAdmin';
@@ -184,65 +185,37 @@ function LoginPage() {
     }
   };
 
+  const isSignIn = mode === 'signIn';
   return (
-    <CenteredCard title={mode === 'signIn' ? 'Admin sign in' : 'Reset password'}>
-      {error && <Banner tone="error">{error}</Banner>}
-      {notice && <Banner tone="success">{notice}</Banner>}
-      <form onSubmit={submit} className="space-y-4" noValidate>
-        <Field id="email" label="Email" required>
-          <input
-            id="email"
-            type="email"
-            autoComplete="username"
-            required
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className={inputClass}
-          />
-        </Field>
-        {mode === 'signIn' && (
-          <Field id="password" label="Password" required>
-            <div className="flex gap-2">
-              <input
-                id="password"
-                type={showPassword ? 'text' : 'password'}
-                autoComplete="current-password"
-                required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className={inputClass}
-              />
-              <button
-                type="button"
-                className={buttonClass.secondary}
-                onClick={() => setShowPassword((v) => !v)}
-                aria-pressed={showPassword}
-              >
-                {showPassword ? 'Hide' : 'Show'}
-              </button>
-            </div>
-          </Field>
-        )}
-        <button
-          type="submit"
-          className={`${buttonClass.primary} w-full`}
-          disabled={busy || !email || (mode === 'signIn' && !password)}
-        >
-          {busy ? 'Please wait…' : mode === 'signIn' ? 'Sign in' : 'Send reset link'}
-        </button>
-      </form>
-      <button
-        type="button"
-        className="mt-4 text-sm text-slate-400 hover:text-teal-300"
-        onClick={() => {
-          setMode(mode === 'signIn' ? 'reset' : 'signIn');
-          setError('');
-          setNotice('');
-        }}
+    <LoginLayout>
+      <LoginCard
+        title={isSignIn ? 'Admin Sign In' : 'Reset password'}
+        subtitle={isSignIn ? 'Access your portfolio admin panel.' : "Enter your email and we'll send a reset link."}
       >
-        {mode === 'signIn' ? 'Forgot password?' : 'Back to sign in'}
-      </button>
-    </CenteredCard>
+        {error && <Banner tone="error">{error}</Banner>}
+        {notice && <Banner tone="success">{notice}</Banner>}
+        <LoginForm
+          mode={mode}
+          email={email}
+          password={password}
+          showPassword={showPassword}
+          busy={busy}
+          onEmail={(e) => setEmail(e.target.value)}
+          onPassword={(e) => setPassword(e.target.value)}
+          onToggle={() => setShowPassword((v) => !v)}
+          onSubmit={submit}
+        />
+        <ForgotPasswordLink
+          onClick={() => {
+            setMode(isSignIn ? 'reset' : 'signIn');
+            setError('');
+            setNotice('');
+          }}
+        >
+          {isSignIn ? 'Forgot password?' : 'Back to sign in'}
+        </ForgotPasswordLink>
+      </LoginCard>
+    </LoginLayout>
   );
 }
 
