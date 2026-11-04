@@ -1,4 +1,5 @@
 import React from "react";
+import { FaEnvelope, FaPhoneAlt } from "react-icons/fa";
 
 const Footer = () => {
   return (
@@ -7,8 +8,9 @@ const Footer = () => {
         <div className="grid grid-col-1 sm:grid-cols-2 lg:grid-cols-2 gap-6 text-left mb-6">
           <div className="col-span-2">
             <h3 className="text-white font-semibold mb-2">Contact Information</h3>
-            <p className="mb-1">
-              Email:{" "}
+            <p className="mb-1 flex flex-wrap items-center gap-x-2">
+              <FaEnvelope className="h-4 w-4 shrink-0 text-teal-300" aria-hidden="true" />
+              <span>Email:</span>
               <a
                 href="mailto:jkrkumar1801@gmail.com"
                 className="text-gray-300"
@@ -16,29 +18,15 @@ const Footer = () => {
                 jayakumarjayakrishnanjk@gmail.com
               </a>
             </p>
-            <p className="mb-1">
-              Phone:{" "}
+            <p className="mb-1 flex flex-wrap items-center gap-x-2">
+              <FaPhoneAlt className="h-4 w-4 shrink-0 text-teal-300" aria-hidden="true" />
+              <span>Phone:</span>
               <a href="tel:+919514101822" className="text-gray-300">
                 +91 9514101822
               </a>
             </p>
           </div>
 
-          {/* Address Section with responsiveness */}
-          <div className="sm:col-span-1 lg:col-span-2 grid grid-cols-2 lg:grid-row-2 gap-6">
-            <div className="col-span-2 lg:col-span-1">
-              <h3 className="text-white font-semibold mb-2">Home Address</h3>
-              <p className="mb-px">Pillayar Kovil Street, Ponngunam,</p>
-              <p className="mb-px">Panruti-607 106</p>
-            </div>
-            <div className="col-span-2 lg:col-span-1">
-              <h3 className="text-white font-semibold mb-2">Current Address</h3>
-              <p className="mb-px">
-                No:26/5, Vagai Street, Balaji Nagar, Irumbuliur, East Tambaram,
-              </p>
-              <p className="mb-px">Chennai-600 045</p>
-            </div>
-          </div>
         </div>
 
         {/* Copyright Bar */}

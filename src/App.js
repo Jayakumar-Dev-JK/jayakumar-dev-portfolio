@@ -11,6 +11,7 @@ function App() {
   const spotlightRef = useRef(null); // Updated directly on mouse move to avoid re-rendering
   const [activeSection, setActiveSection] = useState("");
   const sections = useRef([]);
+  const profileRef = useRef(null);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const menuRef = useRef(null); // Ref for the dropdown menu
   const menuButtonRef = useRef(null); // Ref for the menu button
@@ -72,7 +73,21 @@ function App() {
       }
     });
 
+    // The profile (hero) is taller than the other sections, so it is marked active
+    // once 30% of it is in view instead of 60%.
+    const profileObserver = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting && entry.intersectionRatio >= 0.3) {
+          setActiveSection(entry.target.id);
+        }
+      },
+      { root: null, rootMargin: "0px", threshold: 0.3 }
+    );
+    const profileSection = profileRef.current;
+    if (profileSection) profileObserver.observe(profileSection);
+
     return () => {
+      profileObserver.disconnect();
       currentSections.forEach((section) => {
         if (section) {
           observer.unobserve(section);
@@ -90,6 +105,7 @@ function App() {
   };
 
   const menuItems = [
+    { id: "profile", label: "Profile" },
     { id: "/", label: "About" },
     { id: "experience", label: "Experience" },
     { id: "skills", label: "Tech Stack & Skills" },
@@ -293,7 +309,9 @@ function App() {
               className="lg:px-6 lg:w-7/12 h-full overflow-y-auto transition duration-300 relative"
               style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
             >
-              <Hero />
+              <section id="profile" ref={profileRef}>
+                <Hero />
+              </section>
               <section
                 id="/"
                 ref={(el) => (sections.current[0] = el)}

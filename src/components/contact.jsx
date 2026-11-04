@@ -53,7 +53,7 @@ function Contact() {
             onChange={handleChange}
             placeholder="Your Name"
             required
-            className="w-full px-4 lg:py-3 py-2 bg-transparent border text-white rounded-md placeholder-gray-300 focus:ring focus:ring-teal-900"
+            className="w-full px-4 lg:py-3 py-2 bg-transparent border border-slate-600 text-white rounded-md placeholder-gray-300 transition-colors hover:border-slate-500 focus:outline-none focus:border-teal-300 focus:ring-1 focus:ring-teal-300"
           />
         </div>
         <div>
@@ -65,7 +65,7 @@ function Contact() {
             onChange={handleChange}
             placeholder="Your Email"
             required
-            className="w-full px-4 lg:py-3 py-2 bg-transparent border text-white rounded-md placeholder-gray-300 focus:ring focus:ring-teal-900"
+            className="w-full px-4 lg:py-3 py-2 bg-transparent border border-slate-600 text-white rounded-md placeholder-gray-300 transition-colors hover:border-slate-500 focus:outline-none focus:border-teal-300 focus:ring-1 focus:ring-teal-300"
           />
         </div>
         <div>
@@ -77,7 +77,7 @@ function Contact() {
             onChange={handleChange}
             placeholder="How can I assist you? Type your query or service request here..."
             required
-            className="w-full px-4 lg:py-3 py-2 bg-transparent border text-white rounded-md placeholder-gray-300 focus:ring focus:ring-teal-900"
+            className="w-full px-4 lg:py-3 py-2 bg-transparent border border-slate-600 text-white rounded-md placeholder-gray-300 transition-colors hover:border-slate-500 focus:outline-none focus:border-teal-300 focus:ring-1 focus:ring-teal-300"
           ></textarea>
         </div>
         <button
