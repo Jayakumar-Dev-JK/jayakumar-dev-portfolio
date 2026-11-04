@@ -77,11 +77,13 @@ function Metrics({ items = DEFAULT_METRICS, startAfter = 0, entrance = true, cla
       className={`mx-panel${entrance ? " mx-panel--enter" : ""}${visible ? " is-visible" : ""} ${className}`}
     >
       <ul className="mx-list" aria-label="Career highlights">
-        {items.map(({ value, label, Icon }, i) => (
+        {items.map(({ value, label /*, Icon */ }, i) => (
           <li key={label} className="mx-item">
+            {/* Icons hidden for now. To show them again, restore `Icon` above and uncomment:
             <span className="mx-icon" aria-hidden="true">
               <Icon />
             </span>
+            */}
             <span className="mx-text">
               <span className="mx-value" aria-hidden="true">
                 {counts[i]}+

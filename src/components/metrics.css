@@ -4,8 +4,7 @@
    touches: top light edge, soft sheen and frosted icon tiles.
    The panel is its own size container, so spacing and type scale with the
    panel's width (cqi) wherever it is placed.
-   ≥ 560px: one row, icon beside text · 380–560px: one row, icon above text ·
-   < 380px: 2 × 2 grid
+   Always one row at every width (it only scales down, it never becomes a grid).
    ========================================================================== */
 
 .mx-panel {
@@ -154,76 +153,21 @@
   }
 }
 
-/* Medium: keep one row, stack icon above text to save width. */
-@container mx (max-width: 560px) {
+/* Small screens: the same single row as on desktop, just smaller (never a grid). */
+@container mx (max-width: 480px) {
   .mx-item {
-    flex-direction: column;
-    gap: 8px;
-    text-align: center;
-  }
-
-  .mx-text {
-    align-items: center;
-  }
-
-  .mx-icon {
-    width: clamp(32px, 9cqi, 40px);
-    font-size: clamp(14px, 3.8cqi, 17px);
+    gap: 6px;
+    padding: 4px 2px;
   }
 
   .mx-value {
-    font-size: clamp(16px, 5cqi, 24px);
+    font-size: clamp(15px, 5.4cqi, 22px);
   }
 
   .mx-label {
-    font-size: clamp(8px, 2cqi, 10px);
-    letter-spacing: 0.12em;
-  }
-}
-
-/* Narrow: 2 × 2 grid with horizontal and vertical dividers. */
-@container mx (max-width: 380px) {
-  .mx-list {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .mx-item {
-    flex-direction: row;
-    justify-content: flex-start;
-    gap: 10px;
-    padding: 12px;
-    text-align: left;
-  }
-
-  .mx-text {
-    align-items: flex-start;
-  }
-
-  .mx-item + .mx-item::before {
-    display: none;
-  }
-
-  .mx-item:nth-child(even)::before,
-  .mx-item:nth-child(n + 3)::after {
-    content: "";
-    position: absolute;
-    display: block;
-    background: rgba(var(--mx-line), 0.35);
-  }
-
-  .mx-item:nth-child(even)::before {
-    left: 0;
-    top: 0;
-    bottom: 0;
-    width: 1px;
-  }
-
-  .mx-item:nth-child(n + 3)::after {
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 1px;
+    margin-top: 4px;
+    font-size: clamp(7px, 1.95cqi, 9px);
+    letter-spacing: 0.08em;
   }
 }
 

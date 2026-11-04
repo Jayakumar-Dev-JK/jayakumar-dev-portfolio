@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { deleteMedia, findMediaUsage, listMedia, MEDIA_LIMITS, updateMediaAlt, uploadFile } from '../services/mediaService';
+import { deleteMedia, findMediaUsage, listMedia, MEDIA_LIMITS, uploadFile } from '../services/mediaService';
 import { listProjects } from '../services/projectService';
 import { Banner, buttonClass, inputClass, smallButtonClass, useSession } from './ui';
 
@@ -171,17 +171,6 @@ export default function MediaAdmin() {
     }
   };
 
-  const saveAlt = async (item, altText) => {
-    if (altText.trim() === (item.altText || '')) return;
-    try {
-      await updateMediaAlt(item.id, altText);
-      setNotice({ tone: 'success', text: 'Alt text saved.' });
-      await load();
-    } catch (err) {
-      setNotice({ tone: 'error', text: err.message });
-    }
-  };
-
   const copyUrl = async (url) => {
     try {
       await navigator.clipboard.writeText(url);
@@ -270,15 +259,6 @@ export default function MediaAdmin() {
                 <p className={usedBy.length ? 'text-teal-200' : 'text-admin-muted'}>
                   {usedBy.length ? `Used by ${usedBy.map((p) => p.title).join(', ')}` : 'Not used by any project'}
                 </p>
-                {item.resourceType === 'image' && (
-                  <input
-                    aria-label={`Alt text for ${item.filename}`}
-                    placeholder="Alt text"
-                    defaultValue={item.altText}
-                    onBlur={(e) => saveAlt(item, e.target.value)}
-                    className={inputClass}
-                  />
-                )}
                 <div className="flex gap-2">
                   <button type="button" className={smallButtonClass.secondary} onClick={() => copyUrl(item.url)}>
                     Copy URL

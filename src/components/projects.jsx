@@ -281,23 +281,23 @@ function ProjectsPage() {
 
   return (
     <div className="pb-2">
-      <div className="mb-2 flex flex-wrap items-center justify-between gap-x-4 gap-y-3 py-2">
-        <div className="min-w-[12rem] flex-1">
+      <div className="mb-2 flex items-center justify-between gap-x-3 py-2 sm:gap-x-4">
+        <div className="min-w-0 flex-1">
           <h1 className="z-10 text-xl font-bold text-teal-300">Projects</h1>
           <p className="mt-1 text-sm text-slate-400">{activeMode.subtitle}</p>
         </div>
-        <div className="flex min-h-[46px] shrink-0 items-stretch rounded-full border border-slate-700 p-1" role="group" aria-label="Project type">
+        <div className="flex min-h-[38px] shrink-0 items-stretch rounded-full border border-slate-700 p-0.5 sm:min-h-[46px] sm:p-1" role="group" aria-label="Project type">
           {MODES.map(({ id, label, Icon }) => (
             <button
               key={id}
               type="button"
               aria-pressed={mode === id}
               onClick={() => switchMode(id)}
-              className={`flex items-center gap-2 rounded-full px-4 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-teal-300 ${
+              className={`flex items-center gap-1.5 rounded-full px-2.5 text-xs font-medium transition-colors sm:gap-2 sm:px-4 sm:text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-teal-300 ${
                 mode === id ? 'bg-teal-400/10 text-teal-200' : 'text-slate-400 hover:text-teal-300'
               }`}
             >
-              <Icon className="h-4 w-4 shrink-0" aria-hidden="true" />
+              <Icon className="h-3.5 w-3.5 shrink-0 sm:h-4 sm:w-4" aria-hidden="true" />
               {label}
             </button>
           ))}
