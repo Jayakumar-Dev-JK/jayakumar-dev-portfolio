@@ -226,6 +226,17 @@ export function validateCategory(category) {
 
 export const TECH_LIMITS = { name: 60, svg: 20000 };
 
+// Pasted snippets often leave out xmlns. Without it the file isn't recognised as an image:
+// Cloudinary rejects the upload ("raw images are not supported") and <img> won't render it.
+// Also add the xlink namespace when xlink:href is used, since that is invalid XML without it.
+export function withSvgNamespace(svg) {
+  const open = /^<svg\b[^>]*>/i.exec(svg)?.[0] || '';
+  let extra = '';
+  if (!/\sxmlns\s*=/i.test(open)) extra += ' xmlns="http://www.w3.org/2000/svg"';
+  if (/xlink:/i.test(svg) && !/\sxmlns:xlink\s*=/i.test(open)) extra += ' xmlns:xlink="http://www.w3.org/1999/xlink"';
+  return extra ? svg.replace(/^<svg\b/i, `<svg${extra}`) : svg;
+}
+
 // The skill form takes one "logo" input: an https:// image URL or pasted <svg> markup.
 // Returns { iconUrl, iconSvg } or { error }. SVGs are only ever shown through <img>, which
 // doesn't run scripts, but markup with scripts or event handlers is still rejected.
@@ -238,7 +249,7 @@ export function parseLogoInput(value) {
     if (/<script|<foreignObject|\son[a-z]+\s*=|javascript:/i.test(text)) {
       return { error: 'This SVG contains scripts or event handlers. Use a plain SVG.' };
     }
-    return { iconUrl: '', iconSvg: text };
+    return { iconUrl: '', iconSvg: withSvgNamespace(text) };
   }
   if (!isSafeUrl(text)) return { error: 'Paste an https:// image URL or SVG code that starts with <svg.' };
   return { iconUrl: text, iconSvg: '' };
