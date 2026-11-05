@@ -51,7 +51,7 @@ test('an unknown project shows the not-found page, marked noindex', () => {
   expect(document.title).toMatch(/Page not found/);
 });
 
-test('links back to the projects section of the homepage', () => {
+test('links back to the homepage with a clean address (no #projects in the URL)', () => {
   renderAt('/projects/laya');
-  expect(screen.getByRole('link', { name: /Projects/ })).toHaveAttribute('href', '/#projects');
+  expect(screen.getByRole('link', { name: /Projects/ })).toHaveAttribute('href', '/');
 });

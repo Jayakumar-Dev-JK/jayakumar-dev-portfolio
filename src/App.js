@@ -98,11 +98,18 @@ function App() {
     };
   }, []);
 
-  // Arriving from another page with a hash (e.g. "/#projects" from a project page): the sections
-  // load in chunks, so scroll again once they have taken their place.
+  // Arriving from another page: a project page sends { scrollTo: "projects" } so the address
+  // stays a clean "/". A hash link (e.g. "/#projects") is honoured too. The sections load in
+  // chunks, so scroll again once they have taken their place.
   useEffect(() => {
-    const id = decodeURIComponent(window.location.hash.slice(1));
+    const hint = window.history.state?.usr?.scrollTo;
+    const hash = decodeURIComponent(window.location.hash.slice(1));
+    const id = hint || hash;
     if (!id || id.startsWith("post=")) return undefined;
+    if (hint) {
+      // Used once: a refresh or later visit to "/" must not scroll again.
+      window.history.replaceState({ ...window.history.state, usr: null }, "");
+    }
     const timers = [300, 1200].map((ms) =>
       setTimeout(() => document.getElementById(id)?.scrollIntoView(), ms)
     );

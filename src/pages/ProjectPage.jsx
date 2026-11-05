@@ -113,7 +113,8 @@ function ProjectDetails({ project, categories }) {
       <article className="mx-auto max-w-3xl">
         <nav aria-label="Breadcrumb" className="text-sm">
           <Link
-            to="/#projects"
+            to="/"
+            state={{ scrollTo: 'projects' }}
             className="inline-flex items-center gap-2 font-medium text-slate-300 hover:text-teal-300 focus-visible:outline-none focus-visible:text-teal-300"
           >
             <FaArrowLeft className="h-3 w-3" aria-hidden="true" />
