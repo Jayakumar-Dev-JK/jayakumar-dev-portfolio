@@ -434,7 +434,7 @@ function ProjectsPage({ data }) {
       <div
         ref={barRef}
         data-projects-bar=""
-        className={`z-20 bg-slate-900 pb-2 transition-[border-color] duration-200 lg:-mx-6 lg:px-6 ${
+        className={`z-20 bg-slate-900 pb-1.5 transition-[border-color] sm:pb-2 duration-200 lg:-mx-6 lg:px-6 ${
           sticky ? 'sticky top-[var(--projects-top,0px)]' : 'relative'
         } border-b ${stuck ? 'border-slate-800' : 'border-transparent'}`}
         style={release ? { marginBottom: release } : undefined}
@@ -444,14 +444,14 @@ function ProjectsPage({ data }) {
             <h2 className="z-10 text-xl font-bold text-teal-300">Projects</h2>
             <p className="mt-1 hidden text-sm text-slate-400 sm:block">{activeMode.subtitle}</p>
           </div>
-          <div className="flex min-h-[46px] shrink-0 items-stretch rounded-full border border-slate-700 p-0.5 sm:p-1" role="group" aria-label="Project type">
+          <div className="flex min-h-10 shrink-0 items-stretch rounded-full border border-slate-700 p-0.5 sm:min-h-[46px] sm:p-1" role="group" aria-label="Project type">
             {MODES.map(({ id, label, Icon }) => (
               <button
                 key={id}
                 type="button"
                 aria-pressed={mode === id}
                 onClick={() => switchMode(id)}
-                className={`flex items-center gap-1.5 rounded-full px-2.5 text-xs font-medium transition-colors sm:gap-2 sm:px-4 sm:text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-teal-300 ${
+                className={`relative flex items-center gap-1.5 rounded-full px-2.5 text-xs font-medium transition-colors before:absolute before:inset-x-0 before:-inset-y-[5px] before:content-[''] sm:gap-2 sm:px-4 sm:text-sm sm:before:hidden focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-teal-300 ${
                   mode === id ? 'bg-teal-400/10 text-teal-200' : 'text-slate-400 hover:text-teal-300'
                 }`}
               >
@@ -462,14 +462,14 @@ function ProjectsPage({ data }) {
           </div>
         </div>
         {chips.length > 0 && (
-          <div className="mt-1 flex gap-2 overflow-x-auto pb-1" role="group" aria-label="Filter projects by category">
+          <div className="-mb-1.5 -mt-0.5 flex gap-2 overflow-x-auto py-1.5 sm:mb-0 sm:mt-1 sm:py-0 sm:pb-1" role="group" aria-label="Filter projects by category">
             {chips.map(({ id, label }) => (
               <button
                 key={id}
                 type="button"
                 aria-pressed={activeCategory === id}
                 onClick={() => setCategory(id)}
-                className={`flex h-10 shrink-0 items-center gap-2 rounded-full border pl-3 pr-1.5 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-teal-300 sm:h-9 ${
+                className={`relative flex h-8 shrink-0 items-center gap-2 rounded-full border pl-3 pr-1.5 text-sm font-medium transition-colors before:absolute before:inset-x-0 before:-inset-y-[7px] before:content-[''] sm:before:hidden focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-teal-300 sm:h-9 ${
                   activeCategory === id
                     ? 'border-teal-400/40 bg-teal-400/10 text-teal-200'
                     : 'border-slate-700 text-slate-400 hover:text-teal-300'
@@ -477,7 +477,7 @@ function ProjectsPage({ data }) {
               >
                 {label}
                 <span
-                  className={`flex h-6 min-w-[1.5rem] items-center justify-center rounded-full px-1.5 text-xs ${
+                  className={`flex h-5 min-w-[1.25rem] items-center justify-center rounded-full px-1.5 text-xs sm:h-6 sm:min-w-[1.5rem] ${
                     activeCategory === id ? 'bg-teal-400/20 text-teal-100' : 'bg-slate-800 text-slate-400'
                   }`}
                 >
