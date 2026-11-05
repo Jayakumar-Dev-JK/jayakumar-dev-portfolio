@@ -70,7 +70,7 @@ function track(method, ...args) {
   if (!isFirebaseConfigured) return;
   import('../services/analyticsService')
     .then((analytics) => analytics[method](...args))
-    .catch(() => {});
+    .catch(() => { });
 }
 
 // The card's clickable title. The invisible overlay span makes the whole card clickable on desktop.
@@ -266,9 +266,8 @@ export function ProjectCard({ project, onOpen, reveal, scrollMargin }) {
         ...(animated && !shown ? { transitionDelay: `${(reveal % 4) * 70}ms` } : null),
         ...(scrollMargin ? { scrollMarginTop: scrollMargin } : null),
       }}
-      className={`group relative grid gap-4 rounded-lg p-4 transition-all sm:grid-cols-8 sm:gap-6 md:grid-cols-1 md:gap-4 lg:grid-cols-8 overflow-hidden lg:hover:-translate-y-0.5 motion-reduce:hover:translate-y-0 ${
-        animated ? `duration-500 ease-out motion-reduce:transition-none ${shown ? 'translate-y-0 opacity-100' : 'translate-y-5 opacity-0'}` : ''
-      }`}
+      className={`group relative grid gap-4 rounded-lg p-4 transition-all sm:grid-cols-8 sm:gap-6 md:grid-cols-1 md:gap-4 lg:grid-cols-8 overflow-hidden lg:hover:-translate-y-0.5 motion-reduce:hover:translate-y-0 ${animated ? `duration-500 ease-out motion-reduce:transition-none ${shown ? 'translate-y-0 opacity-100' : 'translate-y-5 opacity-0'}` : ''
+        }`}
     >
       <div className="absolute -inset-x-4 -inset-y-4 z-0 hidden transition motion-reduce:transition-none lg:-inset-x-6 lg:block lg:group-hover:bg-slate-600/15 lg:group-hover:shadow-[inset_0_1px_0_0_rgba(148,163,184,0.1)] lg:group-hover:drop-shadow-lg"></div>
 
@@ -388,11 +387,13 @@ function ProjectsPage({ data }) {
   }, [sticky, stickyTop]);
 
   const projects = allProjects.filter((p) => p.type === activeMode.type);
-  const chips = categories
-    .filter((c) => (c.projectTypes || []).includes(activeMode.type))
-    .map((c) => ({ id: c.id, label: c.name }));
-  const activeCategory = category ?? defaultCategory(projects, chips);
   const countFor = (id) => projects.filter((p) => p.categoryIds.includes(id)).length;
+  // A category with no projects in this tab gets no chip: there would be nothing to show behind it.
+  const chips = categories
+    .filter((c) => (c.projectTypes || []).includes(activeMode.type) && countFor(c.id) > 0)
+    .map((c) => ({ id: c.id, label: c.name }));
+  // A chosen category that has since emptied (data changed) falls back to the tab's default.
+  const activeCategory = chips.some((c) => c.id === category) ? category : defaultCategory(projects, chips);
   // A tab with no categories configured simply lists all of its projects.
   const visibleProjects = chips.length === 0 ? projects : projects.filter((p) => p.categoryIds.includes(activeCategory));
 
@@ -434,9 +435,8 @@ function ProjectsPage({ data }) {
       <div
         ref={barRef}
         data-projects-bar=""
-        className={`z-20 bg-slate-900 pb-1.5 transition-[border-color] sm:pb-2 duration-200 lg:-mx-6 lg:px-6 ${
-          sticky ? 'sticky top-[var(--projects-top,0px)]' : 'relative'
-        } border-b ${stuck ? 'border-slate-800' : 'border-transparent'}`}
+        className={`z-20 pb-1.5 transition-[border-color] sm:pb-2 duration-200 lg:-mx-6 lg:px-6 ${sticky ? 'sticky top-[var(--projects-top,0px)]' : 'relative'
+          } border-b ${stuck ? 'border-slate-800' : 'border-transparent'}`}
         style={release ? { marginBottom: release } : undefined}
       >
         <div className="flex items-center justify-between gap-x-3 py-1.5 sm:gap-x-4">
@@ -451,9 +451,8 @@ function ProjectsPage({ data }) {
                 type="button"
                 aria-pressed={mode === id}
                 onClick={() => switchMode(id)}
-                className={`relative flex items-center gap-1.5 rounded-full px-2.5 text-xs font-medium transition-colors before:absolute before:inset-x-0 before:-inset-y-[5px] before:content-[''] sm:gap-2 sm:px-4 sm:text-sm sm:before:hidden focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-teal-300 ${
-                  mode === id ? 'bg-teal-400/10 text-teal-200' : 'text-slate-400 hover:text-teal-300'
-                }`}
+                className={`relative flex items-center gap-1.5 rounded-full px-2.5 text-xs font-medium transition-colors before:absolute before:inset-x-0 before:-inset-y-[5px] before:content-[''] sm:gap-2 sm:px-4 sm:text-sm sm:before:hidden focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-teal-300 ${mode === id ? 'bg-teal-400/10 text-teal-200' : 'text-slate-400 hover:text-teal-300'
+                  }`}
               >
                 <Icon className="h-3.5 w-3.5 shrink-0 sm:h-4 sm:w-4" aria-hidden="true" />
                 {label}
@@ -469,17 +468,15 @@ function ProjectsPage({ data }) {
                 type="button"
                 aria-pressed={activeCategory === id}
                 onClick={() => setCategory(id)}
-                className={`relative flex h-8 shrink-0 items-center gap-2 rounded-full border pl-3 pr-1.5 text-sm font-medium transition-colors before:absolute before:inset-x-0 before:-inset-y-[7px] before:content-[''] sm:before:hidden focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-teal-300 sm:h-9 ${
-                  activeCategory === id
+                className={`relative flex h-8 shrink-0 items-center gap-2 rounded-full border pl-3 pr-1.5 text-sm font-medium transition-colors before:absolute before:inset-x-0 before:-inset-y-[7px] before:content-[''] sm:before:hidden focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-teal-300 sm:h-9 ${activeCategory === id
                     ? 'border-teal-400/40 bg-teal-400/10 text-teal-200'
                     : 'border-slate-700 text-slate-400 hover:text-teal-300'
-                }`}
+                  }`}
               >
                 {label}
                 <span
-                  className={`flex h-5 min-w-[1.25rem] items-center justify-center rounded-full px-1.5 text-xs sm:h-6 sm:min-w-[1.5rem] ${
-                    activeCategory === id ? 'bg-teal-400/20 text-teal-100' : 'bg-slate-800 text-slate-400'
-                  }`}
+                  className={`flex h-5 min-w-[1.25rem] items-center justify-center rounded-full px-1.5 text-xs sm:h-6 sm:min-w-[1.5rem] ${activeCategory === id ? 'bg-teal-400/20 text-teal-100' : 'bg-slate-800 text-slate-400'
+                    }`}
                 >
                   {countFor(id)}
                 </span>

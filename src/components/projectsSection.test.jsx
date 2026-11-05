@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import ProjectsPage from './projects';
 import { fixtureProjects } from './projectsSection.fixture';
@@ -119,4 +119,57 @@ test('when sticky is off there are no release margins at all', async () => {
   await waitFor(() => expect(section).toHaveAttribute('data-content-height', '300'));
   expect(container.querySelector('[data-projects-bar]').style.marginBottom).toBe('');
   expect(section.querySelector(':scope > ul').style.marginTop).toBe('');
+});
+
+describe('categories with no projects get no chip', () => {
+  const withoutCategory = (data, id) => ({ ...data, projects: data.projects.filter((p) => !p.categoryIds.includes(id)) });
+  const chipNames = () =>
+    within(screen.getByRole('group', { name: 'Filter projects by category' }))
+      .getAllByRole('button')
+      .map((c) => c.textContent.replace(/\d+$/, ''));
+
+  test('an empty category is left out of the chips', () => {
+    renderSection(withoutCategory(fixtureProjects('full'), 'others'));
+    expect(chipNames()).toEqual(['Web App', 'Mobile App', 'Websites']);
+  });
+
+  test('it is decided per tab: Development shows only its own categories that have projects', () => {
+    renderSection();
+    fireEvent.click(screen.getByRole('button', { name: 'Development' }));
+    // Thozhil Admin is in both dashboard and web, so all three Development categories have projects here.
+    expect(chipNames()).toEqual(['Web Apps', 'E-Commerce', 'Dashboards']);
+    cleanup();
+    const data = withoutCategory(fixtureProjects('full'), 'dashboard');
+    renderSection(data);
+    fireEvent.click(screen.getByRole('button', { name: 'Development' }));
+    expect(chipNames()).toEqual(['Web Apps', 'E-Commerce']);
+  });
+
+  test('every chip that is shown has at least one project', () => {
+    renderSection();
+    within(screen.getByRole('group', { name: 'Filter projects by category' }))
+      .getAllByRole('button')
+      .forEach((chip) => expect(Number(chip.textContent.match(/(\d+)$/)[1])).toBeGreaterThan(0));
+  });
+
+  test('a selected category that empties out falls back to the default instead of showing a blank list', () => {
+    const full = fixtureProjects('full');
+    const { container, rerender } = renderSection(full);
+    fireEvent.click(screen.getByRole('button', { name: /Others/ }));
+    expect(items(container)).toHaveLength(2);
+    rerender(
+      <MemoryRouter>
+        <ProjectsPage data={withoutCategory(full, 'others')} />
+      </MemoryRouter>
+    );
+    expect(screen.getByRole('button', { name: /Websites/ })).toHaveAttribute('aria-pressed', 'true');
+    expect(items(container).length).toBeGreaterThan(0);
+  });
+
+  test('a tab with no categories configured still lists all of its projects', () => {
+    const data = { ...fixtureProjects('full'), categories: [] };
+    const { container } = renderSection(data);
+    expect(screen.queryByRole('group', { name: 'Filter projects by category' })).toBeNull();
+    expect(items(container)).toHaveLength(10);
+  });
 });
