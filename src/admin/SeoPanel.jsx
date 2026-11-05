@@ -1,10 +1,10 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { FaCheck, FaExclamation } from 'react-icons/fa';
 import { SEO_LEVELS, seoChecks } from '../lib/seoCheck';
 import { SITE_NAME, SITE_URL, seoDescription, seoTitle } from '../lib/pageMeta';
 import { ProjectDetails } from '../pages/ProjectPage';
-import { buttonClass, Icon, SegmentedControl, smallButtonClass } from './ui';
+import { buttonClass, Icon, smallButtonClass } from './ui';
 
 const LEVEL_STYLES = {
   success: 'bg-admin-accent-bg text-admin-accent-text',
@@ -73,7 +73,6 @@ function LengthMeter({ label, value, min, max }) {
 // "How it will look in Google" plus what to improve. Advice only: it never blocks saving.
 // `input` is the editor's project (see toInput in ProjectsAdmin).
 export function SeoPanel({ input, type }) {
-  const [device, setDevice] = useState('desktop');
   const slug = input.slug || 'your-project';
   const checks = seoChecks({ ...input, slug });
   const title = seoTitle(input.title || 'Project title');
@@ -86,7 +85,6 @@ export function SeoPanel({ input, type }) {
   const host = SITE_URL.replace('https://', '');
   const { label, tone } = SEO_LEVELS[checks.level];
   const passed = checks.items.filter((item) => item.ok);
-  const mobile = device === 'mobile';
 
   return (
     <section aria-labelledby="seo-heading" className="mt-6 border-t border-admin-subtle pt-6">
@@ -102,21 +100,10 @@ export function SeoPanel({ input, type }) {
         How this project can appear in Google. Google may rewrite it, and new pages take days or weeks to show up.
       </p>
 
-      <SegmentedControl
-        className="mt-3"
-        ariaLabel="Preview device"
-        value={device}
-        onChange={setDevice}
-        options={[
-          { value: 'desktop', label: 'Desktop' },
-          { value: 'mobile', label: 'Mobile' },
-        ]}
-      />
-
       <div
         aria-label="Google result preview"
         role="group"
-        className={`mt-3 rounded-lg bg-white p-4 text-left ${mobile ? 'mx-auto max-w-[360px]' : ''}`}
+        className="mt-3 rounded-lg bg-white p-4 text-left"
       >
         <div className="flex items-center gap-3">
           <span aria-hidden="true" className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-slate-100 text-xs font-semibold text-slate-700">
@@ -129,7 +116,7 @@ export function SeoPanel({ input, type }) {
             </p>
           </div>
         </div>
-        <p className={`mt-2 line-clamp-2 break-words text-[#1a0dab] ${mobile ? 'text-lg leading-6' : 'text-xl leading-7'}`}>{title}</p>
+        <p className="mt-2 line-clamp-2 break-words text-xl leading-7 text-[#1a0dab]">{title}</p>
         <p className="mt-1 line-clamp-3 break-words text-sm leading-[22px] text-[#4d5156]">{description}</p>
       </div>
 
