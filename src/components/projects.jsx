@@ -283,7 +283,7 @@ function ProjectsPage() {
     <div className="pb-2">
       <div className="mb-2 flex items-center justify-between gap-x-3 py-2 sm:gap-x-4">
         <div className="min-w-0 flex-1">
-          <h1 className="z-10 text-xl font-bold text-teal-300">Projects</h1>
+          <h2 className="z-10 text-xl font-bold text-teal-300">Projects</h2>
           <p className="mt-1 text-sm text-slate-400">{activeMode.subtitle}</p>
         </div>
         <div className="flex min-h-[38px] shrink-0 items-stretch rounded-full border border-slate-700 p-0.5 sm:min-h-[46px] sm:p-1" role="group" aria-label="Project type">

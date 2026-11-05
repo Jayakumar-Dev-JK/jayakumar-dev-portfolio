@@ -1,6 +1,6 @@
 import React from 'react';
 
-function Experiance() {
+function Experience() {
     return (
         <>
             <ul className="space-y-4">
@@ -70,4 +70,4 @@ function Experiance() {
     );
 }
 
-export default Experiance;
+export default Experience;

@@ -17,7 +17,7 @@
   },
   "scripts": {
     "start": "react-scripts start",
-    "prebuild": "node -e \"require.resolve('react-scripts')\" || npm install --include=dev --no-audit --no-fund",
+    "prebuild": "node -e \"require.resolve('react-scripts/package.json')\" || npm install --include=dev --no-audit --no-fund",
     "build": "react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject",

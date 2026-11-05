@@ -3,7 +3,7 @@ import Hero from "./components/hero";
 
 // Below-the-fold sections are split out so the hero (LCP) is not delayed by their code.
 const About = lazy(() => import("./components/about"));
-const Experiance = lazy(() => import("./components/experiance"));
+const Experience = lazy(() => import("./components/experience"));
 const ProjectsPage = lazy(() => import("./components/projects"));
 const Footer = lazy(() => import("./components/footer"));
 const Contact = lazy(() => import("./components/contact"));
@@ -319,7 +319,7 @@ function App() {
                 ref={(el) => (sections.current[0] = el)}
                 className="mt-4 lg:mt-6"
               >
-                <h1 className=" lg:hidden z-40 text-xl font-bold text-teal-300 lg:pb-4 pb-2 mt-6 ">About</h1>
+                <h2 className=" lg:hidden z-40 text-xl font-bold text-teal-300 lg:pb-4 pb-2 mt-6 ">About</h2>
                 <Suspense fallback={null}><About /></Suspense>
               </section>
               <section
@@ -327,15 +327,15 @@ function App() {
                 ref={(el) => (sections.current[1] = el)}
                 className="mt-4"
               >
-                <h1 className="z-10 text-xl font-bold text-teal-300 pb-2">Experiance</h1>
-                <Suspense fallback={null}><Experiance /></Suspense>
+                <h2 className="z-10 text-xl font-bold text-teal-300 pb-2">Experience</h2>
+                <Suspense fallback={null}><Experience /></Suspense>
               </section>
               <section
                 id="skills"
                 ref={(el) => (sections.current[2] = el)}
                 className="mt-4"
               >
-                <h1 className="z-40 text-xl font-bold text-teal-300 pb-2">Tech Stack & Skills</h1>
+                <h2 className="z-40 text-xl font-bold text-teal-300 pb-2">Tech Stack & Skills</h2>
                 <Suspense fallback={null}><IconMarquee /></Suspense>
               </section>
               <section
@@ -350,7 +350,7 @@ function App() {
                 ref={(el) => (sections.current[4] = el)}
                 className="mt-4"
               >
-                <h1 className="z-10 text-xl font-bold text-teal-300 py-2">Contact</h1>
+                <h2 className="z-10 text-xl font-bold text-teal-300 py-2">Contact</h2>
                 <Suspense fallback={null}><Contact /></Suspense>
                 <Suspense fallback={null}><Footer /></Suspense>
               </section>
