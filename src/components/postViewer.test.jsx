@@ -50,7 +50,7 @@ test('carousel moves with buttons and arrow keys, and closes with Escape', () =>
   expect(onClose).toHaveBeenCalled();
 });
 
-test('link cards open the project link directly in a new tab', () => {
+test('link cards open the project page, which carries the external link', () => {
   render(
     <MemoryRouter>
       <ul>
@@ -59,8 +59,8 @@ test('link cards open the project link directly in a new tab', () => {
     </MemoryRouter>
   );
   const link = screen.getByRole('link', { name: /Summer poster/ });
-  expect(link).toHaveAttribute('href', 'https://deskmate.example');
-  expect(link).toHaveAttribute('target', '_blank');
+  expect(link).toHaveAttribute('href', `/projects/${post.slug}`);
+  expect(link).not.toHaveAttribute('target');
 });
 
 test('post cards open the popup and show the image count', () => {

@@ -98,6 +98,17 @@ function App() {
     };
   }, []);
 
+  // Arriving from another page with a hash (e.g. "/#projects" from a project page): the sections
+  // load in chunks, so scroll again once they have taken their place.
+  useEffect(() => {
+    const id = decodeURIComponent(window.location.hash.slice(1));
+    if (!id || id.startsWith("post=")) return undefined;
+    const timers = [300, 1200].map((ms) =>
+      setTimeout(() => document.getElementById(id)?.scrollIntoView(), ms)
+    );
+    return () => timers.forEach(clearTimeout);
+  }, []);
+
   const handleNavClick = (id) => {
     const section = document.getElementById(id);
     if (section) {

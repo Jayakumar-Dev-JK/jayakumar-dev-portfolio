@@ -48,13 +48,13 @@ function Hero() {
         <div className="ph-light" aria-hidden="true" />
 
         <h2 className="ph-headline">
-          <img className="ph-headline__img" src={headline} alt="UI/UX Designer" width="1672" height="941" fetchPriority="high" decoding="async" />
+          <img className="ph-headline__img" src={headline} alt="UI/UX Designer" width="1672" height="941" fetchpriority="high" decoding="async" />
         </h2>
 
         <img className="ph-orbit" src={orbitLine} alt="" aria-hidden="true" width="440" height="160" />
-        <img className="ph-phones" src={phones} alt="" aria-hidden="true" width="1442" height="1091" fetchPriority="high" decoding="async" />
-        <img className="ph-desktop" src={desktop} alt="" aria-hidden="true" width="1619" height="971" fetchPriority="high" decoding="async" />
-        <img className="ph-portrait" src={portrait} alt="Portrait of Jayakumar" width="1263" height="1245" fetchPriority="high" decoding="async" />
+        <img className="ph-phones" src={phones} alt="" aria-hidden="true" width="1442" height="1091" fetchpriority="high" decoding="async" />
+        <img className="ph-desktop" src={desktop} alt="" aria-hidden="true" width="1619" height="971" fetchpriority="high" decoding="async" />
+        <img className="ph-portrait" src={portrait} alt="Portrait of Jayakumar" width="1263" height="1245" fetchpriority="high" decoding="async" />
 
         {NOTES.map(({ key, items, ruleFirst }) => (
           <div key={key} className={`ph-note ph-note--${key}`}>

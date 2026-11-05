@@ -53,3 +53,11 @@ test('cards without an image, or with a broken one, show the placeholder', () =>
   fireEvent.error(container.querySelector('img'));
   expect(screen.getByText('Preview coming soon')).toBeInTheDocument();
 });
+
+test('development cards open their own project page', () => {
+  renderProjects();
+  fireEvent.click(screen.getByRole('button', { name: 'Development' }));
+  const link = screen.getByRole('link', { name: /Laya/ });
+  expect(link).toHaveAttribute('href', '/projects/laya');
+  expect(link).not.toHaveAttribute('target');
+});

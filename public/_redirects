@@ -1,2 +1,8 @@
-# Netlify: serve the single-page app for every route (needed for /admin on refresh).
-/*    /index.html    200
+# Netlify rules run top to bottom; the "!" forces a rule even when a static file exists.
+# Live sitemap built from the published projects.
+/sitemap.xml        /.netlify/functions/sitemap                  200!
+# One page per project: real title, description and content for search engines.
+/projects/:slug     /.netlify/functions/project-page?slug=:slug  200!
+/projects           /#projects                                   301
+# Single-page app: serve index.html for every other route (needed for /admin on refresh).
+/*                  /index.html                                  200

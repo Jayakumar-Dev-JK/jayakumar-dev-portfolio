@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { FaPalette, FaCode, FaClone } from 'react-icons/fa';
 import { isFirebaseConfigured } from '../lib/firebaseConfig';
 import { parseTags } from '../lib/validation';
@@ -15,9 +16,10 @@ const MAX_TAGS = 3;
 const POST_HASH_PREFIX = 'post=';
 
 // Built-in data, used only when Firebase isn't configured (e.g. local development without .env.local).
-const STATIC_PORTFOLIO = {
+export const STATIC_PORTFOLIO = {
   projects: LEGACY_PROJECTS.map((p, index) => ({
     id: p.slug,
+    slug: p.slug,
     type: 'Development',
     title: p.title,
     description: p.description,
@@ -72,7 +74,7 @@ function track(method, ...args) {
 }
 
 // The card's clickable title. The invisible overlay span makes the whole card clickable on desktop.
-// Link projects open their primary link in a new tab; posts open the popup viewer.
+// Link projects open their own page; posts open the popup viewer.
 function ProjectTitleAction({ project, onOpen }) {
   const className =
     'inline-flex items-baseline text-left font-medium leading-tight text-slate-200 hover:text-teal-300 focus-visible:text-teal-300 focus-visible:outline-none group/link text-base';
@@ -88,19 +90,14 @@ function ProjectTitleAction({ project, onOpen }) {
       </button>
     );
   }
-  if (!project.href) return <span>{project.title}</span>;
+  // Link projects open their own page (real URL, indexable); the external link is on that page.
+  const slug = project.slug || project.id;
+  if (!slug) return <span>{project.title}</span>;
   return (
-    <a
-      className={className}
-      href={project.href}
-      target="_blank"
-      rel="noreferrer noopener"
-      onClick={() => track('recordOutboundClick', project.id, project.href)}
-    >
+    <Link className={className} to={`/projects/${slug}`}>
       {overlay}
       <span>{project.title}</span>
-      <span className="sr-only"> (opens in a new tab)</span>
-    </a>
+    </Link>
   );
 }
 
