@@ -194,7 +194,7 @@ export default function AnalyticsAdmin() {
                 <DailyBars title="Outbound clicks per day" unit="clicks" series={summary.daysList.map((d) => ({ ...d, value: d.clicks }))} />
               </div>
               <details className="mb-8 text-sm">
-                <summary className="cursor-pointer text-slate-400 hover:text-teal-300">Show daily numbers as a table</summary>
+                <summary className="cursor-pointer rounded py-1.5 text-slate-400 max-md:py-3 hover:text-teal-300 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-admin-accent">Show daily numbers as a table</summary>
                 <div className="mt-3 max-h-72 overflow-auto">
                   <table className="w-full text-left">
                     <thead className="text-xs uppercase tracking-wide text-admin-muted">

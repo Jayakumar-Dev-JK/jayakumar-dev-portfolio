@@ -1,6 +1,8 @@
 // "Is this project page good enough for search?" - the checks behind the SEO panel in the
 // project editor and the badge in the project list. Advice only: nothing here blocks saving.
 //
+// Each check names the editor field that fixes it (`field`, an element id), so the panel can jump there.
+//
 // Input is a project in the editor/Firestore shape: title, slug, shortDescription, description,
 // techStack[], coverMedia{url, alt}, gallery[{url, alt}], projectUrl, links[].
 
@@ -21,12 +23,15 @@ export function seoChecks(project) {
   const total = contentWords(project);
   const gallery = (project.gallery || []).filter((img) => img?.url);
   const missingAlt = gallery.filter((img) => !String(img.alt || '').trim()).length;
+  // Index in the editor's image list (it renders one alt-text input per image, in order).
+  const firstMissingAlt = (project.gallery || []).findIndex((img) => img?.url && !String(img.alt || '').trim());
   const hasCover = Boolean(project.coverMedia?.url);
   const hasLink = Boolean(project.projectUrl) || (project.links || []).some((l) => l?.url);
 
   const items = [
     {
       id: 'short',
+      field: 'shortDescription',
       ok: short.length >= SHORT_MIN && short.length <= SHORT_MAX,
       label: 'Short description length',
       tip:
@@ -38,6 +43,7 @@ export function seoChecks(project) {
     },
     {
       id: 'content',
+      field: 'description',
       ok: total >= CONTENT_GOOD_WORDS,
       label: 'Written description',
       tip:
@@ -49,6 +55,7 @@ export function seoChecks(project) {
     },
     {
       id: 'cover-alt',
+      field: hasCover ? 'coverAlt' : 'coverUrl',
       ok: hasCover && Boolean(String(project.coverMedia.alt || '').trim()),
       label: 'Cover image description',
       tip: !hasCover
@@ -59,24 +66,28 @@ export function seoChecks(project) {
     },
     {
       id: 'gallery-alt',
+      field: `gallery-alt-${Math.max(firstMissingAlt, 0)}`,
       ok: missingAlt === 0,
       label: 'Image descriptions',
       tip: missingAlt === 0 ? 'Every image has alt text.' : `${missingAlt} image${missingAlt === 1 ? '' : 's'} without alt text. Describe each one.`,
     },
     {
       id: 'tech',
+      field: 'techStack',
       ok: (project.techStack || []).length > 0,
       label: 'Tools / tech stack',
       tip: (project.techStack || []).length ? 'Tools are listed.' : 'List the tools or technologies used.',
     },
     {
       id: 'link',
+      field: 'projectUrl',
       ok: hasLink,
       label: 'Link to the project',
       tip: hasLink ? 'The page links to the project.' : 'Add a primary link (live site, Figma, Behance…) so visitors can open the work.',
     },
     {
       id: 'slug',
+      field: 'slug',
       ok: Boolean(project.slug) && project.slug.length <= SLUG_MAX,
       label: 'Page address',
       tip:

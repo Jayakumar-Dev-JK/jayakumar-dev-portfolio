@@ -8,6 +8,11 @@
   line-height: 20px;
 }
 
+/* Paragraphs avoid a lone word on their last line. */
+.adm p {
+  text-wrap: pretty;
+}
+
 /* Scrollbars: thin, in the admin palette (border #334155 thumb, accent on hover, app track).
    Covers every scroll area inside the admin, portaled dialogs (they carry .adm too) and the
    page itself while the admin is mounted. */
@@ -53,6 +58,12 @@
   .adm ::-webkit-scrollbar-corner {
     background: transparent;
   }
+}
+
+/* The top bar sticks to the top of every admin page (4rem tall): anything scrolled or focused into
+   view (skip link target, "go to field" buttons, validation errors) must land below it. */
+:root:has(.adm) {
+  scroll-padding-top: 5rem;
 }
 
 /* Sign-in backdrop: ambient light in the existing accent teal (45,212,191) over the app background. */

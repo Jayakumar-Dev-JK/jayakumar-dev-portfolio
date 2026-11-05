@@ -95,7 +95,7 @@ export function PasswordInput({ value, onChange, visible, onToggle }) {
           onClick={onToggle}
           aria-pressed={visible}
           aria-label={visible ? 'Hide password' : 'Show password'}
-          className="absolute right-1.5 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-md text-admin-muted transition-colors hover:text-admin-accent focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-admin-accent"
+          className="absolute right-1 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-md max-md:h-11 max-md:w-11 text-admin-muted transition-colors hover:text-admin-accent focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-admin-accent"
         >
           {visible ? <FaEyeSlash aria-hidden="true" /> : <FaEye aria-hidden="true" />}
         </button>
@@ -133,7 +133,7 @@ export function ForgotPasswordLink({ onClick, children }) {
       <button
         type="button"
         onClick={onClick}
-        className="rounded text-sm text-admin-muted transition-colors hover:text-admin-accent focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-admin-accent"
+        className="inline-flex min-h-6 items-center rounded px-1 text-sm text-admin-muted transition-colors hover:text-admin-accent focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-admin-accent max-md:min-h-11"
       >
         {children}
       </button>

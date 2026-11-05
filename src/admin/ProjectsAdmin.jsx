@@ -38,8 +38,12 @@ import { cardImageUrl, fitImageUrl } from '../lib/images';
 import { SITE_URL } from '../lib/pageMeta';
 import { PagePreview, SeoBadge, SeoPanel } from './SeoPanel';
 import {
+  FaArrowDown,
+  FaArrowLeft,
+  FaArrowUp,
   FaCode,
   FaEllipsisV,
+  FaExternalLinkAlt,
   FaFileImport,
   FaList,
   FaMagic,
@@ -49,6 +53,7 @@ import {
   FaSearch,
   FaStar,
   FaThLarge,
+  FaTimes,
   FaUndo,
 } from 'react-icons/fa';
 import {
@@ -69,6 +74,7 @@ import {
   useConfirm,
   useSession,
   useToast,
+  useUnsavedGuard,
 } from './ui';
 import { MediaPicker, UploadButton } from './MediaAdmin';
 
@@ -400,7 +406,7 @@ export function ProjectsList() {
       on ? 'border-admin-accent-border bg-admin-accent-bg text-admin-accent-text' : 'border-admin-border text-admin-body hover:text-admin-accent'
     }`;
   const viewButtonClass = (on) =>
-    `flex h-8 w-8 items-center justify-center rounded-full focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-admin-accent max-md:h-10 max-md:w-10 ${
+    `flex h-8 w-8 items-center justify-center rounded-full focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-admin-accent max-md:h-11 max-md:w-11 ${
       on ? 'bg-admin-accent-bg text-admin-accent-text' : 'text-admin-muted hover:text-admin-accent'
     }`;
 
@@ -543,9 +549,9 @@ export function ProjectsList() {
       )}
 
       {data.status === 'ready' && visible.length > 0 && view === 'cards' && (
-        <ul className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3" aria-label="Projects">
+        <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3" aria-label="Projects">
           {visible.map((p) => (
-            <Card as="li" key={p.id} className="flex flex-col transition-colors hover:border-admin-border">
+            <Card as="li" key={p.id} className="flex min-w-0 flex-col transition-colors hover:border-admin-border">
               {/* Clip only the image: clipping the whole card would hide the actions menu. */}
               <div className="relative overflow-hidden rounded-t-lg">
                 <ProjectThumb project={p} className="aspect-video w-full" />
@@ -559,7 +565,7 @@ export function ProjectsList() {
               <div className="flex flex-1 flex-col gap-3 p-4">
                 <div className="min-w-0">
                   <h2 className="truncate font-medium text-admin-strong" title={p.title}>
-                    <Link to={`/admin/projects/${p.id}`} className="hover:text-admin-accent focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-admin-accent">
+                    <Link to={`/admin/projects/${p.id}`} className="block truncate py-1 max-md:py-3 hover:text-admin-accent focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-admin-accent">
                       {p.title}
                     </Link>
                   </h2>
@@ -802,7 +808,9 @@ export function ProjectEditor() {
     (c) => (c.projectTypes || []).includes(form.type) && (c.active || form.categoryIds.includes(c.id))
   );
 
-  const save = async ({ publish }) => {
+  // Returns true when everything was saved (and published, if asked). `stay: false` is for "save
+  // and leave": the caller navigates, so no reload or redirect to the new project's edit URL.
+  const save = async ({ publish, stay = true }) => {
     const input = toInput(form);
     const fieldErrors = validateProject(input, {
       publish: publish || stored?.status === 'published',
@@ -812,18 +820,20 @@ export function ProjectEditor() {
     setNotice(null);
     if (Object.keys(fieldErrors).length) {
       setNotice({ tone: 'error', text: 'Please fix the highlighted fields.' });
-      return;
+      return false;
     }
 
     setSaving(true);
     let createdId = null;
     let saved = false;
+    let published = !publish;
     try {
       if (isNew) createdId = await createProject(input, user.uid);
       else await updateProject(id, input, user.uid, stored?.updatedAt?.toMillis?.() ?? null);
       saved = true;
       setInitial(form);
       if (publish) await publishProject(createdId || id, user.uid);
+      published = true;
       setNotice({ tone: 'success', text: publish ? 'Saved and published.' : 'Saved.' });
     } catch (err) {
       if (err instanceof ValidationError) setErrors(err.fieldErrors);
@@ -835,15 +845,24 @@ export function ProjectEditor() {
     } finally {
       setSaving(false);
     }
+    if (!stay) return saved && published;
     // A new project now exists: move to its edit URL so saving again doesn't create a duplicate.
     if (createdId) navigate(`/admin/projects/${createdId}`, { replace: true });
     else if (saved) await load();
+    return saved && published;
   };
 
-  const cancel = () => {
-    if (dirty && !window.confirm('Discard your unsaved changes?')) return;
-    navigate('/admin');
-  };
+  // Back, Cancel, the sidebar and the breadcrumbs all ask before unsaved changes are lost.
+  const { leave, guardClick } = useUnsavedGuard({
+    dirty,
+    save: () => save({ publish: false, stay: false }),
+    saveLabel: 'Save & leave',
+    description:
+      stored?.status === 'published'
+        ? 'This project is live. Your changes are not saved yet, so visitors still see the last saved version.'
+        : 'You have unsaved changes to this project. Save them as a draft, or discard them and leave.',
+  });
+  const cancel = () => leave('/admin');
 
   if (loadState === 'loading') return <p role="status">Loading…</p>;
   if (loadState === 'missing') {
@@ -895,15 +914,29 @@ export function ProjectEditor() {
 
   return (
     <section aria-labelledby="editor-heading">
+      <Link
+        to="/admin"
+        onClick={guardClick('/admin')}
+        className="-ml-2 mb-3 inline-flex h-9 items-center gap-2 rounded-full px-2 text-sm font-medium text-admin-muted hover:text-admin-accent focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-admin-accent max-md:h-11"
+      >
+        <Icon as={FaArrowLeft} size={12} />
+        Back to projects
+      </Link>
       <div className="mb-6 flex flex-wrap items-center gap-3">
         <h1 id="editor-heading" className="text-xl font-bold text-teal-300">
           {isNew ? 'New project' : 'Edit project'}
         </h1>
         {stored && <StatusBadge project={stored} />}
-        {dirty && <span className="text-xs text-admin-muted">Unsaved changes</span>}
         {isPublished && stored?.slug && (
-          <a href={`/projects/${stored.slug}`} target="_blank" rel="noreferrer noopener" className="text-sm font-medium text-admin-accent hover:underline">
-            View live page ↗<span className="sr-only"> (opens in a new tab)</span>
+          <a
+            href={`/projects/${stored.slug}`}
+            target="_blank"
+            rel="noreferrer noopener"
+            className="inline-flex min-h-6 items-center gap-1.5 rounded text-sm font-medium text-admin-accent hover:underline focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-admin-accent max-md:min-h-11"
+          >
+            View live page
+            <Icon as={FaExternalLinkAlt} size={11} />
+            <span className="sr-only"> (opens in a new tab)</span>
           </a>
         )}
       </div>
@@ -927,7 +960,7 @@ export function ProjectEditor() {
         }}
         className="grid gap-8 lg:grid-cols-5"
       >
-        <div className="space-y-5 lg:col-span-3">
+        <div className="min-w-0 space-y-5 lg:col-span-3">
           <Field id="title" label="Title" required error={errors.title}>
             <input id="title" className={inputClass} value={form.title} onChange={(e) => onTitle(e.target.value)} {...errorProps('title')} />
           </Field>
@@ -959,7 +992,7 @@ export function ProjectEditor() {
             <div className="flex gap-4">
               {PROJECT_TYPES.map((t) => (
                 <label key={t} className="flex items-center gap-2 text-sm">
-                  <input type="radio" name="type" value={t} checked={form.type === t} onChange={() => onType(t)} className="accent-teal-400" />
+                  <input type="radio" name="type" value={t} checked={form.type === t} onChange={() => onType(t)} className="h-4 w-4 accent-teal-400" />
                   {t}
                 </label>
               ))}
@@ -978,7 +1011,7 @@ export function ProjectEditor() {
               <div className="flex flex-wrap gap-x-4 gap-y-2">
                 {typeCategories.map((c) => (
                   <label key={c.id} className="flex items-center gap-2 text-sm">
-                    <input type="checkbox" checked={form.categoryIds.includes(c.id)} onChange={() => toggleCategory(c.id)} className="accent-teal-400" />
+                    <input type="checkbox" checked={form.categoryIds.includes(c.id)} onChange={() => toggleCategory(c.id)} className="h-4 w-4 accent-teal-400" />
                     {c.name}
                     {!c.active && <span className="text-xs text-admin-muted">(inactive)</span>}
                   </label>
@@ -1020,6 +1053,7 @@ export function ProjectEditor() {
                     <li key={img.url} className="flex items-center gap-3 rounded-md border border-slate-700/70 p-2">
                       <img src={fitImageUrl(img.url, 160)} alt="" className="h-16 w-16 shrink-0 rounded bg-slate-950 object-contain" />
                       <input
+                        id={`gallery-alt-${i}`}
                         aria-label={`Alt text for image ${i + 1}`}
                         placeholder="Alt text (describe the image)"
                         className={inputClass}
@@ -1028,11 +1062,11 @@ export function ProjectEditor() {
                       />
                       <div className="flex shrink-0 gap-1">
                         <button type="button" className={smallButtonClass.secondary} disabled={i === 0}
-                          onClick={() => moveGalleryImage(i, -1)} aria-label={`Move image ${i + 1} up`}>↑</button>
+                          onClick={() => moveGalleryImage(i, -1)} aria-label={`Move image ${i + 1} up`}><Icon as={FaArrowUp} size={11} /></button>
                         <button type="button" className={smallButtonClass.secondary} disabled={i === form.gallery.length - 1}
-                          onClick={() => moveGalleryImage(i, 1)} aria-label={`Move image ${i + 1} down`}>↓</button>
+                          onClick={() => moveGalleryImage(i, 1)} aria-label={`Move image ${i + 1} down`}><Icon as={FaArrowDown} size={11} /></button>
                         <button type="button" className={smallButtonClass.danger}
-                          onClick={() => update('gallery', form.gallery.filter((_, x) => x !== i))} aria-label={`Remove image ${i + 1}`}>✕</button>
+                          onClick={() => update('gallery', form.gallery.filter((_, x) => x !== i))} aria-label={`Remove image ${i + 1}`}><Icon as={FaTimes} size={11} /></button>
                       </div>
                     </li>
                   ))}
@@ -1143,12 +1177,12 @@ export function ProjectEditor() {
                 onChange={(e) => update('sortOrder', e.target.value)} {...errorProps('sortOrder')} />
             </Field>
             <label className="flex items-center gap-2 self-end pb-2 text-sm">
-              <input type="checkbox" checked={form.featured} onChange={(e) => update('featured', e.target.checked)} className="accent-teal-400" />
+              <input type="checkbox" checked={form.featured} onChange={(e) => update('featured', e.target.checked)} className="h-4 w-4 accent-teal-400" />
               Featured (shown first)
             </label>
           </div>
 
-          <div className="flex flex-wrap gap-2 border-t border-slate-700 pt-5">
+          <div className="sticky bottom-0 z-20 -mx-4 flex flex-wrap items-center gap-2 border-t border-admin-subtle bg-admin-app px-4 py-3 md:mx-0 md:px-0">
             <button type="submit" className={buttonClass.secondary} disabled={saving}>
               {saving ? 'Saving…' : isPublished ? 'Save changes' : 'Save draft'}
             </button>
@@ -1160,6 +1194,10 @@ export function ProjectEditor() {
             <button type="button" className={buttonClass.secondary} onClick={cancel} disabled={saving}>
               Cancel
             </button>
+            <p role="status" className="ml-auto flex items-center gap-2 text-xs text-admin-muted">
+              <span aria-hidden="true" className={`h-2 w-2 rounded-full ${dirty ? 'bg-amber-300' : 'bg-admin-accent-bright'}`} />
+              {dirty ? 'Unsaved changes' : stored ? 'All changes saved' : 'Not saved yet'}
+            </p>
           </div>
           {isPublished && (
             <p className="text-xs text-admin-muted">
@@ -1168,10 +1206,13 @@ export function ProjectEditor() {
           )}
         </div>
 
-        <aside className="lg:col-span-2">
+        <aside
+          aria-label="Previews"
+          className="min-w-0 lg:sticky lg:top-20 lg:col-span-2 lg:max-h-[calc(100vh-6rem)] lg:self-start lg:overflow-y-auto lg:pr-1"
+        >
           <h2 className="mb-2 text-sm font-medium text-slate-200">Preview</h2>
           <p className="mb-3 text-xs text-admin-muted">How the card will look on the portfolio. Only visible to you. Use "Preview page" to see the project's own page, including unsaved changes.</p>
-          <ul className="rounded-lg border border-slate-700/70 lg:sticky lg:top-6">
+          <ul>
             <ProjectCard project={preview} onOpen={() => setPreviewOpen(true)} />
           </ul>
           <div className="mt-3 flex flex-wrap gap-2">

@@ -117,7 +117,7 @@ export function ThumbnailPlaceholder({ type }) {
       <span className="flex h-10 w-10 items-center justify-center rounded-full bg-teal-400/10 text-teal-300 ring-1 ring-teal-400/30">
         <Icon className="h-4 w-4" />
       </span>
-      <span className="text-[10px] font-semibold uppercase tracking-widest text-slate-500">Preview coming soon</span>
+      <span className="text-[10px] font-semibold uppercase tracking-widest text-slate-400">Preview coming soon</span>
     </div>
   );
 }

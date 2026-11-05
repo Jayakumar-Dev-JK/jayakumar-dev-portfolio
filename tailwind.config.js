@@ -19,7 +19,7 @@ module.exports = {
           label: '#E2E8F0',
           body: '#CBD5E1',
           muted: '#94A3B8', // hints and captions (4.5:1 on app)
-          placeholder: '#64748B', // placeholders only: fails 4.5:1 as text
+          placeholder: '#8795AB', // placeholders: 5.4:1 on the input background
           accent: '#5EEAD4',
           'accent-bright': '#2DD4BF',
           'accent-text': '#99F6E4',

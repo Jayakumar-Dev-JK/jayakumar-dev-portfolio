@@ -192,7 +192,7 @@ export default function CategoriesAdmin() {
       )}
 
       {data.categories.length > 0 && (
-        <div className="overflow-x-auto">
+        <div className="relative overflow-x-auto">
           <table className="w-full text-left text-sm">
             <thead className="border-b border-slate-700 text-xs uppercase tracking-wide text-admin-muted">
               <tr>
