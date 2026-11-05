@@ -12,9 +12,6 @@ export const LIMITS = {
   slug: 80,
   shortDescription: 300,
   description: 5000,
-  role: 80,
-  year: 20,
-  caseStudy: 2000, // each of: problem, process, outcome
   previousSlugs: 20,
   techStack: 20,
   tag: 40,
@@ -26,9 +23,6 @@ export const LIMITS = {
   categoryDescription: 300,
   gallery: 20,
 };
-
-// Optional case-study sections shown on the project page, in this order.
-export const CASE_STUDY_FIELDS = ['problem', 'process', 'outcome'];
 
 // The slug is the project page's web address. When a published project gets a new slug, the old
 // one is kept so visitors and search engines are redirected instead of landing on a 404.
@@ -179,13 +173,6 @@ export function validateProject(project, { publish = false, categories = [] } = 
   if ((project.description || '').length > LIMITS.description) {
     errors.description = `Keep the full description under ${LIMITS.description} characters.`;
   }
-  if ((project.role || '').trim().length > LIMITS.role) errors.role = `Keep the role under ${LIMITS.role} characters.`;
-  if ((project.year || '').trim().length > LIMITS.year) errors.year = `Keep the year under ${LIMITS.year} characters.`;
-  CASE_STUDY_FIELDS.forEach((field) => {
-    if ((project[field] || '').length > LIMITS.caseStudy) {
-      errors[field] = `Keep this under ${LIMITS.caseStudy} characters.`;
-    }
-  });
 
   if (categoryIds.length === 0) errors.categoryIds = 'Choose at least one category.';
   else if (categoryIds.length > LIMITS.categories) errors.categoryIds = `Choose at most ${LIMITS.categories} categories.`;

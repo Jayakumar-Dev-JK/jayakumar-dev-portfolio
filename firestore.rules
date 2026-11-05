@@ -57,7 +57,7 @@ service cloud.firestore {
           "title", "slug", "type", "shortDescription", "description", "categoryIds", "techStack",
           "coverMedia", "media", "links", "projectUrl", "featured", "sortOrder", "status",
           "createdAt", "updatedAt", "publishedAt", "createdBy", "updatedBy", "deletedAt",
-          "display", "gallery", "role", "year", "problem", "process", "outcome", "previousSlugs"
+          "display", "gallery", "previousSlugs"
         ])
         && d.keys().hasAll([
           "title", "slug", "type", "shortDescription", "categoryIds", "techStack", "coverMedia",
@@ -76,11 +76,6 @@ service cloud.firestore {
         && (!("projectUrl" in d) || d.projectUrl == "" || isHttpsUrl(d.projectUrl))
         && (!("display" in d) || d.display in ["link", "gallery"])
         && (!("gallery" in d) || (d.gallery is list && d.gallery.size() <= 20))
-        && (!("role" in d) || (d.role is string && d.role.size() <= 80))
-        && (!("year" in d) || (d.year is string && d.year.size() <= 20))
-        && (!("problem" in d) || (d.problem is string && d.problem.size() <= 2000))
-        && (!("process" in d) || (d.process is string && d.process.size() <= 2000))
-        && (!("outcome" in d) || (d.outcome is string && d.outcome.size() <= 2000))
         && (!("previousSlugs" in d) || (d.previousSlugs is list && d.previousSlugs.size() <= 20))
         && d.featured is bool
         && d.sortOrder is number

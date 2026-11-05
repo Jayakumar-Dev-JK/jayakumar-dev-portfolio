@@ -38,8 +38,6 @@ export function SeoPanel({ input, type }) {
     type,
     description: input.shortDescription,
     fullDescription: input.description,
-    problem: input.problem,
-    outcome: input.outcome,
   });
   const host = SITE_URL.replace('https://', '');
   const { label, tone } = SEO_LEVELS[checks.level];

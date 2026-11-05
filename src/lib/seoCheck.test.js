@@ -1,5 +1,5 @@
 import { contentWords, SEO_LEVELS, seoChecks } from './seoCheck';
-import { nextPreviousSlugs, validateProject } from './validation';
+import { nextPreviousSlugs } from './validation';
 import { resolveProject } from './projectLookup';
 
 const words = (n) => Array.from({ length: n }, (_, i) => `word${i}`).join(' ');
@@ -8,10 +8,7 @@ const GOOD = {
   title: 'Why Weds',
   slug: 'why-weds',
   shortDescription: 'A web application for planning and arranging wedding events, built for real event planners.',
-  description: words(80),
-  problem: words(40),
-  process: words(20),
-  outcome: words(20),
+  description: words(160),
   techStack: ['React'],
   coverMedia: { url: 'https://img.example/a.png', alt: 'Home screen' },
   gallery: [{ url: 'https://img.example/b.png', alt: 'Guest list' }],
@@ -28,7 +25,7 @@ test('a complete project is SEO ready with every check passing', () => {
 });
 
 test('little text makes the page "thin"', () => {
-  const thin = seoChecks({ ...GOOD, description: 'Short.', problem: '', process: '', outcome: '' });
+  const thin = seoChecks({ ...GOOD, description: 'Short.' });
   expect(thin.level).toBe('thin');
   expect(thin.items.find((i) => i.id === 'content').ok).toBe(false);
   expect(SEO_LEVELS[thin.level].label).toBe('Thin page');
@@ -50,19 +47,6 @@ test('missing polish is reported without calling the page thin', () => {
 test('the short description has a target length and a slug that is too long is flagged', () => {
   expect(seoChecks({ ...GOOD, shortDescription: 'x'.repeat(200) }).items.find((i) => i.id === 'short').ok).toBe(false);
   expect(seoChecks({ ...GOOD, slug: 'a'.repeat(70) }).items.find((i) => i.id === 'slug').ok).toBe(false);
-});
-
-test('case-study fields have length limits', () => {
-  const base = {
-    title: 'T', slug: 't', type: 'Design', shortDescription: 's', categoryIds: [], techStack: [], links: [],
-    coverMedia: {}, sortOrder: 0, display: 'link', gallery: [],
-  };
-  const errors = validateProject({ ...base, role: 'r'.repeat(81), year: 'y'.repeat(21), problem: 'p'.repeat(2001) });
-  expect(errors.role).toBeTruthy();
-  expect(errors.year).toBeTruthy();
-  expect(errors.problem).toBeTruthy();
-  expect(errors.process).toBeUndefined();
-  expect(validateProject({ ...base, role: 'Designer', year: '2024', outcome: 'Shipped.' }).role).toBeUndefined();
 });
 
 describe('slug history', () => {

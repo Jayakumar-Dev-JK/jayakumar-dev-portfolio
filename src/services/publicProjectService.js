@@ -3,8 +3,6 @@ import { db } from '../lib/firebase';
 import { isSafeUrl, videoEmbedUrl, videoFileUrl } from '../lib/validation';
 import { fetchActiveCategories } from './categoryService';
 
-const text = (value) => (typeof value === 'string' ? value.trim() : '');
-
 // Maps a project document to the fields the public pages need. Unsafe URLs and unknown video
 // providers are dropped here. The admin preview uses it too, so it shows what visitors will see.
 export function mapPublicProject(id, data) {
@@ -13,11 +11,6 @@ export function mapPublicProject(id, data) {
     id,
     slug: data.slug,
     previousSlugs: Array.isArray(data.previousSlugs) ? data.previousSlugs.filter((s) => typeof s === 'string') : [],
-    role: text(data.role),
-    year: text(data.year),
-    problem: text(data.problem),
-    process: text(data.process),
-    outcome: text(data.outcome),
     type: data.type,
     title: data.title,
     description: data.shortDescription,

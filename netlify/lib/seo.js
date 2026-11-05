@@ -47,11 +47,6 @@ function parseProject(doc) {
     type: data.type === 'Design' ? 'Design' : 'Development',
     shortDescription: collapse(data.shortDescription),
     description: typeof data.description === 'string' ? data.description.trim() : '',
-    role: collapse(data.role),
-    year: collapse(data.year),
-    problem: typeof data.problem === 'string' ? data.problem.trim() : '',
-    process: typeof data.process === 'string' ? data.process.trim() : '',
-    outcome: typeof data.outcome === 'string' ? data.outcome.trim() : '',
     techStack: asList(data.techStack).filter((t) => typeof t === 'string' && t.trim()).map((t) => t.trim()),
     coverUrl: isHttps(data.coverMedia?.url) ? data.coverMedia.url : '',
     coverAlt: collapse(data.coverMedia?.alt),
@@ -85,8 +80,7 @@ function seoTitle(title) {
 
 function seoDescription(project) {
   let text = project.shortDescription;
-  const extra = project.description || project.problem || project.outcome;
-  if (text.length < 110 && extra) text = `${text} ${collapse(extra)}`.trim();
+  if (text.length < 110 && project.description) text = `${text} ${collapse(project.description)}`.trim();
   if (!text) text = `${project.title} - a ${project.type.toLowerCase()} project by ${SITE_NAME}.`;
   return clip(text, DESCRIPTION_MAX);
 }
@@ -147,16 +141,6 @@ const paragraphsOf = (text) =>
 
 function bodyHtml(project) {
   const paragraphs = paragraphsOf(project.description);
-  const facts = [project.role && `Role: ${project.role}`, project.year && `Year: ${project.year}`].filter(Boolean);
-  const factsHtml = facts.length ? `<p>${facts.map(escapeHtml).join(' · ')}</p>` : '';
-  const caseStudy = [
-    ['The problem', project.problem],
-    ['Process', project.process],
-    ['Outcome', project.outcome],
-  ]
-    .filter(([, text]) => text)
-    .map(([heading, text]) => `<h2>${heading}</h2>${paragraphsOf(text)}`)
-    .join('');
   const tech = project.techStack.length
     ? `<h2>Technologies</h2><ul>${project.techStack.map((t) => `<li>${escapeHtml(t)}</li>`).join('')}</ul>`
     : '';
@@ -174,7 +158,7 @@ function bodyHtml(project) {
     `<main data-prerendered="project">` +
     `<p><a href="/">Jayakumar Jayakrishnan</a> / <a href="/#projects">Projects</a></p>` +
     `<h1>${escapeHtml(project.title)}</h1>` +
-    `<p>${escapeHtml(project.shortDescription)}</p>${factsHtml}${image}${paragraphs}${caseStudy}${tech}${linkList}</main>`
+    `<p>${escapeHtml(project.shortDescription)}</p>${image}${paragraphs}${tech}${linkList}</main>`
   );
 }
 

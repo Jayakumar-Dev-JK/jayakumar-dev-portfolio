@@ -1,4 +1,4 @@
-import { collection, deleteField, doc, getDoc, getDocs, runTransaction, serverTimestamp, writeBatch } from 'firebase/firestore';
+import { collection, doc, getDoc, getDocs, runTransaction, serverTimestamp, writeBatch } from 'firebase/firestore';
 import { listCategories } from './categoryService';
 import { auditWrite } from './auditService';
 import { createProject, updateProject } from './projectService';
@@ -8,7 +8,6 @@ jest.mock('./categoryService', () => ({ listCategories: jest.fn(), seedDefaultCa
 jest.mock('./auditService', () => ({ auditWrite: jest.fn() }));
 jest.mock('firebase/firestore', () => ({
   collection: jest.fn(),
-  deleteField: jest.fn(),
   doc: jest.fn(),
   getDoc: jest.fn(),
   getDocs: jest.fn(),
@@ -24,7 +23,6 @@ jest.mock('firebase/firestore', () => ({
 // CRA resets mock implementations before every test, so the defaults are set here.
 beforeEach(() => {
   collection.mockReturnValue({});
-  deleteField.mockReturnValue('DELETE_FIELD');
   doc.mockReturnValue({ id: 'new-id' });
   serverTimestamp.mockReturnValue('SERVER_TIME');
   auditWrite.mockReturnValue([{ path: 'audit' }, { action: 'audit' }]);
@@ -68,23 +66,9 @@ async function runUpdate(existing, nextInput, { slugOwnedBy = [] } = {}) {
   return tx.update.mock.calls[0][1];
 }
 
-test('a project that does not use the new fields is saved without them (works before the rules update)', async () => {
+test('saving without renaming does not touch the slug history', async () => {
   const written = await runUpdate(stored(), input());
-  ['role', 'year', 'problem', 'process', 'outcome', 'previousSlugs'].forEach((key) => {
-    expect(written).not.toHaveProperty(key);
-  });
-});
-
-test('filled-in case-study fields are saved trimmed; cleared ones are removed from the project', async () => {
-  const written = await runUpdate(
-    stored({ role: 'Designer', outcome: 'Old outcome' }),
-    input({ role: '  Lead designer ', year: '2024', problem: 'The problem.', process: '', outcome: '' })
-  );
-  expect(written.role).toBe('Lead designer');
-  expect(written.year).toBe('2024');
-  expect(written.problem).toBe('The problem.');
-  expect(written).not.toHaveProperty('process'); // was never set: nothing to remove
-  expect(written.outcome).toBe('DELETE_FIELD'); // was set before, now cleared
+  expect(written).not.toHaveProperty('previousSlugs');
 });
 
 test('renaming a published project keeps its old address for the redirect', async () => {
@@ -104,17 +88,14 @@ test('an address another project used before cannot be reused', async () => {
   });
 });
 
-test('new projects start as drafts and carry the case-study fields only when filled in', async () => {
+test('new projects start as drafts with no slug history', async () => {
   listCategories.mockResolvedValue(CATEGORIES);
   getDocs.mockResolvedValue({ docs: [] });
   const batch = { set: jest.fn(), commit: jest.fn() };
   writeBatch.mockReturnValue(batch);
 
-  await createProject(input({ role: 'Designer', year: '', problem: '' }), 'admin-uid');
+  await createProject(input(), 'admin-uid');
   const data = batch.set.mock.calls[0][1];
   expect(data.status).toBe('draft');
-  expect(data.role).toBe('Designer');
-  expect(data).not.toHaveProperty('year');
-  expect(data).not.toHaveProperty('problem');
   expect(data).not.toHaveProperty('previousSlugs');
 });

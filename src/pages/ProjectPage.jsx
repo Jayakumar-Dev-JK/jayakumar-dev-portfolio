@@ -90,24 +90,6 @@ const paragraphsOf = (text) =>
     .map((p) => p.trim())
     .filter(Boolean);
 
-// One headed section of the case study (problem / process / outcome).
-function CaseStudySection({ heading, text }) {
-  const paragraphs = paragraphsOf(text);
-  if (!paragraphs.length) return null;
-  return (
-    <section className="mt-8">
-      <h2 className="text-lg font-bold text-teal-300">{heading}</h2>
-      <div className="mt-3 space-y-4 leading-relaxed">
-        {paragraphs.map((paragraph) => (
-          <p key={paragraph} className="whitespace-pre-line">
-            {paragraph}
-          </p>
-        ))}
-      </div>
-    </section>
-  );
-}
-
 // `preview` is the admin's "Preview page": it shows exactly what visitors will see, but leaves
 // the page's head tags and the view counter alone and keeps every link on the page.
 export function ProjectDetails({ project, categories, preview = false }) {
@@ -128,10 +110,6 @@ export function ProjectDetails({ project, categories, preview = false }) {
     .map((id) => categories.find((c) => c.id === id)?.name)
     .filter(Boolean);
   const paragraphs = paragraphsOf(project.fullDescription);
-  const facts = [
-    project.role && { label: 'Role', value: project.role },
-    project.year && { label: 'Year', value: project.year },
-  ].filter(Boolean);
   const images = project.gallery?.length
     ? project.gallery
     : project.thumbnail
@@ -168,16 +146,6 @@ export function ProjectDetails({ project, categories, preview = false }) {
             {project.title}
           </h1>
           {project.description && <p className="mt-4 text-lg leading-relaxed">{project.description}</p>}
-          {facts.length > 0 && (
-            <dl className="mt-5 flex flex-wrap gap-x-8 gap-y-2 text-sm">
-              {facts.map(({ label, value }) => (
-                <div key={label}>
-                  <dt className="text-xs font-semibold uppercase tracking-widest text-slate-500">{label}</dt>
-                  <dd className="mt-0.5 font-medium text-slate-200">{value}</dd>
-                </div>
-              ))}
-            </dl>
-          )}
         </header>
 
         {project.videoEmbedUrl && (
@@ -220,9 +188,6 @@ export function ProjectDetails({ project, categories, preview = false }) {
           </section>
         )}
 
-        <CaseStudySection heading="The problem" text={project.problem} />
-        <CaseStudySection heading="Process" text={project.process} />
-        <CaseStudySection heading="Outcome" text={project.outcome} />
 
         {project.tags.length > 0 && (
           <section className="mt-8">

@@ -22,10 +22,9 @@ export function seoTitle(title) {
   return full.length <= TITLE_MAX ? full : clip(title, TITLE_MAX);
 }
 
-export function seoDescription({ title, type, description, fullDescription, problem, outcome }) {
+export function seoDescription({ title, type, description, fullDescription }) {
   let text = collapse(description);
-  const extra = fullDescription || problem || outcome;
-  if (text.length < 110 && extra) text = `${text} ${collapse(extra)}`.trim();
+  if (text.length < 110 && fullDescription) text = `${text} ${collapse(fullDescription)}`.trim();
   if (!text) text = `${title} - a ${String(type || 'web').toLowerCase()} project by ${SITE_NAME}.`;
   return clip(text, DESCRIPTION_MAX);
 }

@@ -1,6 +1,5 @@
 import {
   collection,
-  deleteField,
   doc,
   getDoc,
   getDocs,
@@ -58,20 +57,6 @@ function editableFields(input) {
   };
 }
 
-const OPTIONAL_TEXT_FIELDS = ['role', 'year', 'problem', 'process', 'outcome'];
-
-// Optional case-study text. Empty fields are left out (and removed when they were set before),
-// so a project that doesn't use them is saved exactly as it always was.
-function optionalFields(input, existing) {
-  const out = {};
-  OPTIONAL_TEXT_FIELDS.forEach((key) => {
-    const value = String(input[key] || '').trim();
-    if (value) out[key] = value;
-    else if (existing && key in existing) out[key] = deleteField();
-  });
-  return out;
-}
-
 // The old web address of a published project is kept when its slug changes (see nextPreviousSlugs).
 function slugHistory(existing, newSlug) {
   const next = nextPreviousSlugs(existing, newSlug);
@@ -117,7 +102,6 @@ export async function createProject(input, uid) {
   const batch = writeBatch(db);
   batch.set(ref, {
     ...editableFields(input),
-    ...optionalFields(input, null),
     status: 'draft',
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
@@ -148,7 +132,6 @@ export async function updateProject(id, input, uid, expectedUpdatedAt) {
     const existing = snap.data();
     tx.update(ref, {
       ...editableFields(input),
-      ...optionalFields(input, existing),
       ...slugHistory(existing, input.slug),
       updatedAt: serverTimestamp(),
       updatedBy: uid,

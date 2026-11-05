@@ -2,8 +2,7 @@
 // project editor and the badge in the project list. Advice only: nothing here blocks saving.
 //
 // Input is a project in the editor/Firestore shape: title, slug, shortDescription, description,
-// problem, process, outcome, techStack[], coverMedia{url, alt}, gallery[{url, alt}],
-// projectUrl, links[].
+// techStack[], coverMedia{url, alt}, gallery[{url, alt}], projectUrl, links[].
 
 const words = (text) => String(text || '').trim().split(/\s+/).filter(Boolean).length;
 
@@ -14,7 +13,7 @@ const SHORT_MAX = 160;
 const SLUG_MAX = 60;
 
 export function contentWords(project) {
-  return ['description', 'problem', 'process', 'outcome'].reduce((sum, key) => sum + words(project[key]), 0);
+  return words(project.description);
 }
 
 export function seoChecks(project) {
@@ -40,13 +39,13 @@ export function seoChecks(project) {
     {
       id: 'content',
       ok: total >= CONTENT_GOOD_WORDS,
-      label: 'Written content',
+      label: 'Written description',
       tip:
         total >= CONTENT_GOOD_WORDS
-          ? `${total} words of description and case-study text.`
+          ? `${total} words of description.`
           : total >= CONTENT_THIN_WORDS
-            ? `${total} words. Pages with ${CONTENT_GOOD_WORDS}+ words (description, problem, process, outcome) rank better.`
-            : `Only ${total} words. A page with little text is unlikely to rank - add the problem, your process and the outcome.`,
+            ? `${total} words. Descriptions of ${CONTENT_GOOD_WORDS}+ words rank better.`
+            : `Only ${total} words. A page with little text is unlikely to rank - describe what the project is, who it is for and what you did.`,
     },
     {
       id: 'cover-alt',

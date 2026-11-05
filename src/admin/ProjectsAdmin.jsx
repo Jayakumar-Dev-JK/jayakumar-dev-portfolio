@@ -662,11 +662,6 @@ const EMPTY_FORM = {
   sortOrder: 0,
   display: 'link',
   gallery: [],
-  role: '',
-  year: '',
-  problem: '',
-  process: '',
-  outcome: '',
 };
 
 function toForm(project) {
@@ -687,11 +682,6 @@ function toForm(project) {
     sortOrder: project.sortOrder ?? 0,
     display: project.display || 'link',
     gallery: project.gallery || [],
-    role: project.role || '',
-    year: project.year || '',
-    problem: project.problem || '',
-    process: project.process || '',
-    outcome: project.outcome || '',
   };
 }
 
@@ -712,11 +702,6 @@ function toInput(form) {
     sortOrder: Number(form.sortOrder),
     display: form.display,
     gallery: form.gallery,
-    role: form.role,
-    year: form.year,
-    problem: form.problem,
-    process: form.process,
-    outcome: form.outcome,
   };
 }
 
@@ -883,11 +868,6 @@ export function ProjectEditor() {
   const preview = {
     id: 'preview',
     slug: form.slug,
-    role: form.role.trim(),
-    year: form.year.trim(),
-    problem: form.problem.trim(),
-    process: form.process.trim(),
-    outcome: form.outcome.trim(),
     type: form.type,
     title: form.title || 'Project title',
     description: form.shortDescription || 'Short description',
@@ -1074,35 +1054,6 @@ export function ProjectEditor() {
             <textarea id="description" rows={6} className={inputClass} value={form.description}
               onChange={(e) => update('description', e.target.value)} {...errorProps('description')} />
           </Field>
-
-          <fieldset className="space-y-4 rounded-lg border border-slate-700/70 p-4">
-            <legend className="px-1 text-sm font-medium text-slate-200">Case study details (optional)</legend>
-            <p className="text-xs text-admin-muted">
-              Real written content is what helps a project page rank. Each filled-in section appears on the page under its own heading.
-            </p>
-            <div className="grid gap-4 sm:grid-cols-2">
-              <Field id="role" label="Your role" hint="e.g. UI/UX designer and frontend developer" error={errors.role}>
-                <input id="role" className={inputClass} value={form.role} maxLength={80}
-                  onChange={(e) => update('role', e.target.value)} {...errorProps('role')} />
-              </Field>
-              <Field id="year" label="Year" hint="e.g. 2024 or 2023-2024" error={errors.year}>
-                <input id="year" className={inputClass} value={form.year} maxLength={20}
-                  onChange={(e) => update('year', e.target.value)} {...errorProps('year')} />
-              </Field>
-            </div>
-            <Field id="problem" label="The problem" hint="Who had what problem, and why it mattered." error={errors.problem}>
-              <textarea id="problem" rows={4} className={inputClass} value={form.problem}
-                onChange={(e) => update('problem', e.target.value)} {...errorProps('problem')} />
-            </Field>
-            <Field id="process" label="Process" hint="Research, wireframes, key decisions, how it was built." error={errors.process}>
-              <textarea id="process" rows={4} className={inputClass} value={form.process}
-                onChange={(e) => update('process', e.target.value)} {...errorProps('process')} />
-            </Field>
-            <Field id="outcome" label="Outcome" hint="What changed: results, numbers, feedback." error={errors.outcome}>
-              <textarea id="outcome" rows={4} className={inputClass} value={form.outcome}
-                onChange={(e) => update('outcome', e.target.value)} {...errorProps('outcome')} />
-            </Field>
-          </fieldset>
           <Field id="techStack" label="Tools / tech stack" hint="Comma-separated, e.g. Figma, UI Design, Prototyping." error={errors.techStack}>
             <input id="techStack" className={inputClass} value={form.techStackText}
               onChange={(e) => update('techStackText', e.target.value)} {...errorProps('techStack')} />
