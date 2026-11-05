@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useRef, lazy, Suspense } from "react";
 import Hero from "./components/hero";
+import { pickActiveSection, VISIBILITY_THRESHOLDS } from "./lib/activeSection";
 
 // Below-the-fold sections are split out so the hero (LCP) is not delayed by their code.
 const About = lazy(() => import("./components/about"));
@@ -49,54 +50,18 @@ function App({ projectsData }) {
     };
   }, []);
 
+  // The current section (phone header title, highlighted nav item) is the one filling the most of the screen.
+  // Every section is watched, whatever its height, and re-read as it scrolls (no scroll listener).
   useEffect(() => {
-    const observerOptions = {
-      root: null,
-      rootMargin: "0px",
-      threshold: 0.6,
-    };
-
-    const observerCallback = (entries) => {
-      entries.forEach((entry) => {
-        if (entry.isIntersecting) {
-          setActiveSection(entry.target.id);
-        }
-      });
-    };
-
-    const observer = new IntersectionObserver(
-      observerCallback,
-      observerOptions
-    );
-
-    const currentSections = sections.current;
-    currentSections.forEach((section) => {
-      if (section) {
-        observer.observe(section);
-      }
-    });
-
-    // The profile (hero) is taller than the other sections, so it is marked active
-    // once 30% of it is in view instead of 60%.
-    const profileObserver = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting && entry.intersectionRatio >= 0.3) {
-          setActiveSection(entry.target.id);
-        }
-      },
-      { root: null, rootMargin: "0px", threshold: 0.3 }
-    );
-    const profileSection = profileRef.current;
-    if (profileSection) profileObserver.observe(profileSection);
-
-    return () => {
-      profileObserver.disconnect();
-      currentSections.forEach((section) => {
-        if (section) {
-          observer.unobserve(section);
-        }
-      });
-    };
+    const watched = [profileRef.current, ...sections.current].filter(Boolean);
+    const visible = new Map(watched.map((el) => [el.id, 0])); // keeps document order for ties
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => visible.set(entry.target.id, entry.isIntersecting ? entry.intersectionRect.height : 0));
+      const id = pickActiveSection(visible);
+      if (id) setActiveSection(id);
+    }, { root: null, threshold: VISIBILITY_THRESHOLDS });
+    watched.forEach((el) => observer.observe(el));
+    return () => observer.disconnect();
   }, []);
 
   // Arriving from another page: a project page sends { scrollTo: "projects" } so the address
