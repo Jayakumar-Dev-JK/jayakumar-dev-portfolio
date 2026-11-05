@@ -38,7 +38,7 @@ export const STATIC_PORTFOLIO = {
 };
 
 // Published projects from Firestore. Firebase is loaded on demand so it stays out of the main bundle.
-function usePortfolioData() {
+function usePortfolioData(override) {
   const [state, setState] = useState(() =>
     isFirebaseConfigured
       ? { status: 'loading', projects: [], categories: [] }
@@ -46,7 +46,7 @@ function usePortfolioData() {
   );
 
   useEffect(() => {
-    if (!isFirebaseConfigured) return undefined;
+    if (override || !isFirebaseConfigured) return undefined;
     let cancelled = false;
     import('../services/publicProjectService')
       .then(({ fetchPublicPortfolio }) => fetchPublicPortfolio())
@@ -60,9 +60,9 @@ function usePortfolioData() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [Boolean(override)]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  return state;
+  return override ? { status: 'ready', ...override } : state;
 }
 
 // First-party analytics, loaded on demand and never allowed to break the page.
@@ -167,12 +167,85 @@ function ProjectThumbnail({ project }) {
   );
 }
 
-export function ProjectCard({ project, onOpen }) {
+const prefersReducedMotion = () => Boolean(window.matchMedia?.('(prefers-reduced-motion: reduce)').matches);
+
+// The nearest ancestor that really scrolls (a fixed-height box with overflow). When there is none,
+// the page itself scrolls. A tall box that only grows with its content is not a scroller.
+function findScrollRoot(el) {
+  for (let node = el?.parentElement; node && node !== document.body; node = node.parentElement) {
+    const overflowY = getComputedStyle(node).overflowY;
+    if ((overflowY === 'auto' || overflowY === 'scroll') && node.getBoundingClientRect().height <= window.innerHeight + 1) {
+      return node;
+    }
+  }
+  return null;
+}
+
+// How much room the section has: the visible height of whatever scrolls, and the height of a bar
+// that is fixed above it (the phone header, marked data-fixed-header).
+function useScrollSpace(ref) {
+  const [space, setSpace] = useState({ height: 0, top: 0 });
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return undefined;
+    const root = findScrollRoot(el);
+    const measure = () => {
+      const bar = root ? null : document.querySelector('[data-fixed-header]');
+      const top = bar ? Math.round(bar.getBoundingClientRect().height) : 0;
+      const height = root ? root.clientHeight : window.innerHeight;
+      setSpace((prev) => (prev.height === height && prev.top === top ? prev : { height, top }));
+    };
+    measure();
+    window.addEventListener('resize', measure);
+    const observer = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(measure) : null;
+    observer?.observe(root || document.documentElement);
+    return () => {
+      window.removeEventListener('resize', measure);
+      observer?.disconnect();
+    };
+  }, [ref]);
+  return space;
+}
+
+// Fades a card in when it scrolls into view. Without IntersectionObserver, or when the visitor
+// prefers reduced motion, cards are simply shown.
+function useReveal(enabled) {
+  const ref = useRef(null);
+  const [shown, setShown] = useState(
+    () => !enabled || typeof IntersectionObserver === 'undefined' || prefersReducedMotion()
+  );
+  useEffect(() => {
+    if (shown || !ref.current) return undefined;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setShown(true);
+          observer.disconnect();
+        }
+      },
+      { threshold: 0.08, rootMargin: '0px 0px -6% 0px' }
+    );
+    observer.observe(ref.current);
+    return () => observer.disconnect();
+  }, [shown]);
+  return [ref, shown];
+}
+
+// `reveal` (the card's position in the list) turns on the scroll-in animation.
+export function ProjectCard({ project, onOpen, reveal }) {
   const shownTags = project.tags.slice(0, MAX_TAGS);
   const hiddenTags = project.tags.slice(MAX_TAGS);
+  const animated = reveal !== undefined;
+  const [revealRef, shown] = useReveal(animated);
 
   return (
-    <li className="group relative grid gap-4 rounded-lg p-4 transition-all sm:grid-cols-8 sm:gap-6 md:gap-4 overflow-hidden">
+    <li
+      ref={revealRef}
+      style={animated && !shown ? { transitionDelay: `${(reveal % 4) * 70}ms` } : undefined}
+      className={`group relative grid gap-4 rounded-lg p-4 transition-all sm:grid-cols-8 sm:gap-6 md:gap-4 overflow-hidden ${
+        animated ? `duration-500 ease-out motion-reduce:transition-none ${shown ? 'translate-y-0 opacity-100' : 'translate-y-5 opacity-0'}` : ''
+      }`}
+    >
       <div className="absolute -inset-x-4 -inset-y-4 z-0 hidden transition motion-reduce:transition-none lg:-inset-x-6 lg:block lg:group-hover:bg-slate-600/15 lg:group-hover:shadow-[inset_0_1px_0_0_rgba(148,163,184,0.1)] lg:group-hover:drop-shadow-lg"></div>
 
       <div className="z-10 overflow-hidden rounded-md sm:col-span-3">
@@ -210,13 +283,25 @@ export function ProjectCard({ project, onOpen }) {
   );
 }
 
-function ProjectsPage() {
+// variant "sticky": the heading and tabs stay pinned at the top while the cards scroll with the page.
+// variant "panel":  a long list becomes a full-screen panel with its own scroll; a short one just fits
+//                   its content. Either way the scrollbar is hidden (see index.css).
+// `showCategories={false}` hides the category chips, leaving only the Design / Development tabs.
+// `data` replaces the Firestore data (used by the review page and tests).
+function ProjectsPage({ data, variant = 'sticky', showCategories = true }) {
   const [mode, setMode] = useState('design');
   const [category, setCategory] = useState('all');
-  const { status, projects: allProjects, categories } = usePortfolioData();
+  const { status, projects: allProjects, categories } = usePortfolioData(data);
   const activeMode = MODES.find((m) => m.id === mode);
   const [openPost, setOpenPost] = useState(null);
   const pushedHash = useRef(false);
+  const panel = variant === 'panel';
+
+  const sectionRef = useRef(null);
+  const listRef = useRef(null);
+  const sentinelRef = useRef(null);
+  const { height: spaceHeight, top: spaceTop } = useScrollSpace(sectionRef);
+  const [stuck, setStuck] = useState(false);
 
   // Posts get a shareable URL: /#post=<slug>. Opening one adds a history entry so Back closes it.
   const openViewer = useCallback((project) => {
@@ -261,6 +346,36 @@ function ProjectsPage() {
     return () => window.removeEventListener('popstate', sync);
   }, [status, allProjects]);
 
+  // The bar gets a divider once it has stuck to the top (sticky variant).
+  useEffect(() => {
+    const sentinel = sentinelRef.current;
+    if (panel || !sentinel || typeof IntersectionObserver === 'undefined') {
+      setStuck(false);
+      return undefined;
+    }
+    const observer = new IntersectionObserver(
+      ([entry]) => setStuck(!entry.isIntersecting && entry.boundingClientRect.top < (entry.rootBounds?.top ?? 0) + 1),
+      { rootMargin: `-${spaceTop + 1}px 0px 0px 0px` }
+    );
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, [panel, spaceTop]);
+
+  // Switching tabs while scrolled deep lands on the first card of the new list, not mid-air.
+  const firstRender = useRef(true);
+  useEffect(() => {
+    if (firstRender.current) {
+      firstRender.current = false;
+      return;
+    }
+    const behavior = prefersReducedMotion() ? 'auto' : 'smooth';
+    if (panel) {
+      listRef.current?.scrollTo?.({ top: 0, behavior });
+    } else if (sectionRef.current && sectionRef.current.getBoundingClientRect().top < spaceTop - 1) {
+      sectionRef.current.scrollIntoView?.({ behavior, block: 'start' });
+    }
+  }, [mode, category]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const switchMode = (id) => {
     setMode(id);
     setCategory('all');
@@ -276,53 +391,72 @@ function ProjectsPage() {
   const countFor = (id) => (id === 'all' ? projects.length : projects.filter((p) => p.categoryIds.includes(id)).length);
   const visibleProjects = category === 'all' ? projects : projects.filter((p) => p.categoryIds.includes(category));
 
+  const barClass = `z-20 bg-slate-900 pb-2 lg:-mx-6 lg:px-6 ${
+    panel ? 'flex-none' : 'sticky top-[var(--projects-top,0px)]'
+  } ${stuck || panel ? 'border-b border-slate-800' : 'border-b border-transparent'} transition-[border-color] duration-200`;
+
   return (
-    <div className="pb-2">
-      <div className="mb-2 flex items-center justify-between gap-x-3 py-2 sm:gap-x-4">
-        <div className="min-w-0 flex-1">
-          <h2 className="z-10 text-xl font-bold text-teal-300">Projects</h2>
-          <p className="mt-1 text-sm text-slate-400">{activeMode.subtitle}</p>
+    <div
+      ref={sectionRef}
+      data-projects-section=""
+      data-variant={variant}
+      className={`pb-2 ${panel ? 'flex flex-col' : ''}`}
+      style={{
+        '--projects-top': `${spaceTop}px`,
+        scrollMarginTop: spaceTop,
+        ...(panel && spaceHeight ? { maxHeight: `${spaceHeight - spaceTop}px` } : {}),
+      }}
+    >
+      <div ref={sentinelRef} aria-hidden="true" className="-mb-px h-px" />
+      <div className={barClass} data-projects-bar="">
+        <div className="flex items-center justify-between gap-x-3 py-1.5 sm:gap-x-4">
+          <div className="min-w-0 flex-1">
+            <h2 className="z-10 text-xl font-bold text-teal-300">Projects</h2>
+            <p className="mt-1 hidden text-sm text-slate-400 sm:block">{activeMode.subtitle}</p>
+          </div>
+          <div className="flex min-h-[38px] shrink-0 items-stretch rounded-full border border-slate-700 p-0.5 sm:min-h-[46px] sm:p-1" role="group" aria-label="Project type">
+            {MODES.map(({ id, label, Icon }) => (
+              <button
+                key={id}
+                type="button"
+                aria-pressed={mode === id}
+                onClick={() => switchMode(id)}
+                className={`flex items-center gap-1.5 rounded-full px-2.5 text-xs font-medium transition-colors sm:gap-2 sm:px-4 sm:text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-teal-300 ${
+                  mode === id ? 'bg-teal-400/10 text-teal-200' : 'text-slate-400 hover:text-teal-300'
+                }`}
+              >
+                <Icon className="h-3.5 w-3.5 shrink-0 sm:h-4 sm:w-4" aria-hidden="true" />
+                {label}
+              </button>
+            ))}
+          </div>
         </div>
-        <div className="flex min-h-[38px] shrink-0 items-stretch rounded-full border border-slate-700 p-0.5 sm:min-h-[46px] sm:p-1" role="group" aria-label="Project type">
-          {MODES.map(({ id, label, Icon }) => (
-            <button
-              key={id}
-              type="button"
-              aria-pressed={mode === id}
-              onClick={() => switchMode(id)}
-              className={`flex items-center gap-1.5 rounded-full px-2.5 text-xs font-medium transition-colors sm:gap-2 sm:px-4 sm:text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-teal-300 ${
-                mode === id ? 'bg-teal-400/10 text-teal-200' : 'text-slate-400 hover:text-teal-300'
-              }`}
-            >
-              <Icon className="h-3.5 w-3.5 shrink-0 sm:h-4 sm:w-4" aria-hidden="true" />
-              {label}
-            </button>
-          ))}
-        </div>
-      </div>
-      <div className="mb-4 flex gap-2 overflow-x-auto pb-1" role="group" aria-label="Filter projects by category">
-        {chips.map(({ id, label }) => (
-          <button
-            key={id}
-            type="button"
-            aria-pressed={category === id}
-            onClick={() => setCategory(id)}
-            className={`flex h-9 shrink-0 items-center gap-2 rounded-full border pl-3 pr-1.5 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-teal-300 ${
-              category === id
-                ? 'border-teal-400/40 bg-teal-400/10 text-teal-200'
-                : 'border-slate-700 text-slate-400 hover:text-teal-300'
-            }`}
-          >
-            {label}
-            <span
-              className={`flex h-6 min-w-[1.5rem] items-center justify-center rounded-full px-1.5 text-xs ${
-                category === id ? 'bg-teal-400/20 text-teal-100' : 'bg-slate-800 text-slate-400'
-              }`}
-            >
-              {countFor(id)}
-            </span>
-          </button>
-        ))}
+        {showCategories && (
+          <div className="mt-1 flex gap-2 overflow-x-auto pb-1" role="group" aria-label="Filter projects by category">
+            {chips.map(({ id, label }) => (
+              <button
+                key={id}
+                type="button"
+                aria-pressed={category === id}
+                onClick={() => setCategory(id)}
+                className={`flex h-9 shrink-0 items-center gap-2 rounded-full border pl-3 pr-1.5 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-teal-300 ${
+                  category === id
+                    ? 'border-teal-400/40 bg-teal-400/10 text-teal-200'
+                    : 'border-slate-700 text-slate-400 hover:text-teal-300'
+                }`}
+              >
+                {label}
+                <span
+                  className={`flex h-6 min-w-[1.5rem] items-center justify-center rounded-full px-1.5 text-xs ${
+                    category === id ? 'bg-teal-400/20 text-teal-100' : 'bg-slate-800 text-slate-400'
+                  }`}
+                >
+                  {countFor(id)}
+                </span>
+              </button>
+            ))}
+          </div>
+        )}
       </div>
       {status === 'loading' && (
         <p className="py-4 text-sm text-slate-400" role="status">Loading projects…</p>
@@ -337,9 +471,12 @@ function ProjectsPage() {
           {projects.length === 0 ? `${activeMode.label} projects are coming soon.` : 'No projects in this category yet.'}
         </p>
       )}
-      <ul className="space-y-2">
-        {visibleProjects.map((project) => (
-          <ProjectCard key={project.id} project={project} onOpen={openViewer} />
+      <ul
+        ref={listRef}
+        className={`space-y-2 pt-3 ${panel ? 'min-h-0 flex-1 overflow-y-auto overscroll-y-auto lg:-mx-6 lg:px-6' : ''}`}
+      >
+        {visibleProjects.map((project, index) => (
+          <ProjectCard key={`${mode}-${category}-${project.id}`} project={project} onOpen={openViewer} reveal={index} />
         ))}
       </ul>
       {openPost && (

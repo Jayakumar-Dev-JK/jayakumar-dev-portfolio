@@ -13,52 +13,8 @@
   text-wrap: pretty;
 }
 
-/* Scrollbars: thin, in the admin palette (border #334155 thumb, accent on hover, app track).
-   Covers every scroll area inside the admin, portaled dialogs (they carry .adm too) and the
-   page itself while the admin is mounted. */
-:root:has(.adm),
-.adm,
-.adm * {
-  scrollbar-width: thin;
-  scrollbar-color: #334155 transparent;
-}
-
-:root:has(.adm) {
-  scrollbar-color: #334155 #0f172a;
-}
-
-.adm *:hover {
-  scrollbar-color: rgba(45, 212, 191, 0.4) transparent;
-}
-
-/* Browsers without the standard properties (older Safari) use the WebKit pseudo-elements. */
-@supports not (scrollbar-color: auto) {
-  :root:has(.adm)::-webkit-scrollbar,
-  .adm ::-webkit-scrollbar {
-    width: 6px;
-    height: 6px;
-  }
-
-  :root:has(.adm)::-webkit-scrollbar-track,
-  .adm ::-webkit-scrollbar-track {
-    background: transparent;
-  }
-
-  :root:has(.adm)::-webkit-scrollbar-thumb,
-  .adm ::-webkit-scrollbar-thumb {
-    border-radius: 999px;
-    background: #334155;
-  }
-
-  :root:has(.adm)::-webkit-scrollbar-thumb:hover,
-  .adm ::-webkit-scrollbar-thumb:hover {
-    background: rgba(45, 212, 191, 0.4);
-  }
-
-  .adm ::-webkit-scrollbar-corner {
-    background: transparent;
-  }
-}
+/* Scrollbars are hidden everywhere (see src/index.css). Wheel, touch, trackpad and keyboard scrolling
+   work as usual; there is just no bar to draw. */
 
 /* The top bar sticks to the top of every admin page (4rem tall): anything scrolled or focused into
    view (skip link target, "go to field" buttons, validation errors) must land below it. */

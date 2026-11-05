@@ -141,7 +141,7 @@ function App() {
           className="absolute inset-0 z-0 transition duration-300"
         ></div>
         {/* Mobile Header */}
-        <div className="w-full bg-slate-900 border-b-2 border-spacing-1 border-slate-500 lg:hidden fixed top-0 py-2 px-6 z-40">
+        <div data-fixed-header="" className="w-full bg-slate-900 border-b-2 border-spacing-1 border-slate-500 lg:hidden fixed top-0 py-2 px-6 z-40">
           <button
             className="text-slate-600 flex justify-between w-full"
             onClick={toggleMenu}
@@ -326,7 +326,7 @@ function App() {
               </div>
             </header>
             <main
-              className="lg:px-6 lg:w-7/12 h-full overflow-y-auto transition duration-300 relative"
+              className="lg:px-6 lg:w-7/12 h-full max-lg:overflow-x-clip lg:overflow-y-auto transition duration-300 relative"
               style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
             >
               <section id="profile" ref={profileRef}>
