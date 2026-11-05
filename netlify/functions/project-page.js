@@ -17,13 +17,28 @@ const CACHE_HEADERS = {
   'Netlify-CDN-Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600',
 };
 
+// The project name comes from the address the visitor asked for (/projects/<name>). Netlify does not fill a
+// :placeholder into the query string of a rewrite, so relying on ?slug= made every real page a 404. The
+// ?slug= form still works for direct calls to the function.
+function slugFromEvent(event) {
+  const fromAddress = (value) => String(value || '').match(/\/projects\/([^/?#]+)\/?(?:[?#].*)?$/);
+  const match = fromAddress(event.path) || fromAddress(event.rawUrl);
+  let raw = match ? match[1] : String(event.queryStringParameters?.slug || '');
+  try {
+    raw = decodeURIComponent(raw);
+  } catch {
+    // keep it as typed; the slug check below rejects anything odd
+  }
+  return raw.toLowerCase();
+}
+
 function createHandler({ fetchImpl = fetch, env = process.env } = {}) {
   return async function handler(event) {
     const projectId = env.FIREBASE_PROJECT_ID || env.REACT_APP_FIREBASE_PROJECT_ID;
     const siteUrl = env.SITE_URL || seo.DEFAULT_SITE_URL;
     const host = event.headers?.['x-forwarded-host'] || event.headers?.host;
     const origin = host ? `https://${host}` : siteUrl;
-    const slug = String(event.queryStringParameters?.slug || '').toLowerCase();
+    const slug = slugFromEvent(event);
 
     let shell;
     try {
@@ -74,3 +89,4 @@ function createHandler({ fetchImpl = fetch, env = process.env } = {}) {
 
 exports.handler = createHandler();
 exports.createHandler = createHandler;
+exports.slugFromEvent = slugFromEvent;

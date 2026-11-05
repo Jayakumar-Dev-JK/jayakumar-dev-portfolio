@@ -232,3 +232,31 @@ test('an address that nobody used is still a 404, not a redirect', async () => {
   const res = await createPageHandler({ fetchImpl, env: ENV })(event('never-existed'));
   assert.strictEqual(res.statusCode, 404);
 });
+
+const { slugFromEvent } = require('../functions/project-page');
+
+test('the project name is read from the requested address, not from a query string Netlify may not fill', async () => {
+  // What Netlify really sent for /projects/why-weds: the address is right, the placeholder was left unfilled.
+  const real = { path: '/projects/why-weds', queryStringParameters: { slug: ':slug' }, headers: { host: 'jayakumarwebdev.netlify.app' } };
+  assert.strictEqual(slugFromEvent(real), 'why-weds');
+  const res = await createPageHandler({ fetchImpl: fakeFetch(), env: ENV })(real);
+  assert.strictEqual(res.statusCode, 200);
+  assert.match(res.body, /<h1>Why Weds/);
+});
+
+test('every way the address can arrive gives the same slug', () => {
+  assert.strictEqual(slugFromEvent({ path: '/projects/why-weds' }), 'why-weds');
+  assert.strictEqual(slugFromEvent({ path: '/projects/why-weds/' }), 'why-weds');
+  assert.strictEqual(slugFromEvent({ path: '/projects/Why-Weds' }), 'why-weds');
+  assert.strictEqual(slugFromEvent({ rawUrl: 'https://jayakumarwebdev.netlify.app/projects/why-weds?utm=x' }), 'why-weds');
+  assert.strictEqual(slugFromEvent({ path: '/.netlify/functions/project-page', queryStringParameters: { slug: 'laya' } }), 'laya');
+  assert.strictEqual(slugFromEvent({ path: '/projects/caf%C3%A9' }), 'café');
+  assert.strictEqual(slugFromEvent({}), '');
+});
+
+test('a malformed address is a 404, never an error', async () => {
+  for (const path of ['/projects/%E0%A4%A', '/projects/..%2F..%2Fetc', '/projects/']) {
+    const res = await createPageHandler({ fetchImpl: fakeFetch(), env: ENV })({ path, headers: { host: 'x.netlify.app' } });
+    assert.strictEqual(res.statusCode, 404, path);
+  }
+});
