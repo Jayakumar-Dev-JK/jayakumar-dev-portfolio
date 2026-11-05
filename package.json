@@ -16,7 +16,8 @@
     "web-vitals": "^2.1.4"
   },
   "scripts": {
-    "start": "react-scripts start",
+    "start": "node scripts/start.js",
+    "start:dev": "react-scripts start",
     "prebuild": "node -e \"require.resolve('react-scripts/package.json')\" || npm install --include=dev --no-audit --no-fund",
     "build": "react-scripts build",
     "test": "react-scripts test",
