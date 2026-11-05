@@ -494,7 +494,7 @@ export default function TechStackAdmin() {
                   ) : (
                     <div className="flex flex-wrap items-center gap-x-3 gap-y-2 px-4 py-2">
                       <button type="button" aria-expanded={open} aria-controls={`skills-${category.id}`} disabled={filtering}
-                        className="group flex min-w-[10rem] flex-1 items-center gap-3 rounded-md text-left focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-admin-accent"
+                        className="group flex min-w-[10rem] flex-1 items-center gap-3 rounded-md text-left focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-admin-accent max-md:min-h-11"
                         onClick={() => {
                           setOpenId(open ? null : category.id);
                           if (skillForm && skillForm.categoryId !== category.id) setSkillForm(null);

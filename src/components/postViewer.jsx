@@ -233,6 +233,13 @@ export default function PostViewer({ project, categoryNames = [], onClose, onLin
               ))}
             </ul>
           )}
+          {project.slug && (
+            <p className="mt-6 text-sm">
+              <a href={`/projects/${project.slug}`} className="font-semibold text-slate-200 hover:text-teal-200">
+                Open full page
+              </a>
+            </p>
+          )}
         </div>
       </div>
     </div>,

@@ -1,5 +1,6 @@
-import React, { createContext, useCallback, useContext, useEffect, useId, useRef, useState } from 'react';
+import React, { createContext, useCallback, useContext, useEffect, useId, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
+import { useNavigate } from 'react-router-dom';
 import { FaCheck, FaExclamation, FaExclamationTriangle, FaSpinner } from 'react-icons/fa';
 
 // Shared admin building blocks. Colors come from the `admin` palette in tailwind.config.js.
@@ -14,7 +15,7 @@ export const inputClass =
   'w-full rounded-md border border-admin-border bg-admin-input px-3 py-[7px] text-sm text-admin-strong placeholder-admin-placeholder focus:border-teal-400/60 focus:outline-none focus:ring-1 focus:ring-admin-accent aria-invalid:border-red-400/60 disabled:cursor-not-allowed disabled:opacity-50 max-md:min-h-11';
 
 const buttonBase = `inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full border px-4 py-[7px] text-sm font-medium transition-colors ${focusRing} disabled:cursor-not-allowed disabled:opacity-50 max-md:min-h-11`;
-const smallBase = buttonBase.replace('px-4 py-[7px] text-sm', 'px-3 py-1 text-xs');
+const smallBase = `${buttonBase.replace('px-4 py-[7px] text-sm', 'px-3 py-1 text-xs')} min-h-6 max-md:min-w-11`;
 
 const VARIANTS = {
   primary: 'border-admin-accent-border bg-admin-accent-bg text-admin-accent-text hover:bg-admin-accent-bg-hover',
@@ -71,9 +72,9 @@ export function Field({ id, label, hint, error, required, children }) {
         )}
       </label>
       {children}
-      {hint && !error && <p id={`${id}-hint`} className="mt-1 text-xs text-admin-muted">{hint}</p>}
+      {hint && !error && <p id={`${id}-hint`} className="mt-1 break-words text-xs text-admin-muted">{hint}</p>}
       {error && (
-        <p id={`${id}-error`} className="mt-1 text-xs text-admin-danger-text">
+        <p id={`${id}-error`} className="mt-1 break-words text-xs text-admin-danger-text">
           {error}
         </p>
       )}
@@ -92,7 +93,7 @@ export function Switch({ checked, onChange, label, disabled, id }) {
       aria-label={label}
       disabled={disabled}
       onClick={() => onChange(!checked)}
-      className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full border transition-colors ${focusRing} disabled:cursor-not-allowed disabled:opacity-50 ${
+      className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full border transition-colors before:absolute before:-inset-x-1 before:-inset-y-[10px] before:content-[''] ${focusRing} disabled:cursor-not-allowed disabled:opacity-50 ${
         checked ? 'border-admin-accent-border bg-admin-accent-bg-hover' : 'border-admin-border bg-admin-draft-bg'
       }`}
     >
@@ -136,7 +137,7 @@ export function SegmentedControl({ value, onChange, options, ariaLabel, classNam
                 move(i, -1);
               }
             }}
-            className={`rounded-full px-3 py-1 text-sm font-medium max-md:min-h-9 ${focusRing} ${
+            className={`rounded-full px-3 py-1 text-sm font-medium max-md:min-h-11 ${focusRing} ${
               selected ? 'bg-admin-accent-bg text-admin-accent-text' : 'text-admin-muted hover:text-admin-accent'
             }`}
           >
@@ -160,7 +161,7 @@ export function Chip({ children, selected = false, onClick, disabled }) {
       aria-pressed={selected}
       disabled={disabled}
       onClick={onClick}
-      className={`${base} ${focusRing} disabled:opacity-50 max-md:min-h-9 ${
+      className={`${base} ${focusRing} disabled:opacity-50 max-md:min-h-11 ${
         selected
           ? 'border-admin-accent-border bg-admin-accent-bg text-admin-accent-text'
           : 'border-admin-border text-admin-body hover:text-admin-accent'
@@ -492,6 +493,98 @@ export function useConfirm() {
     />
   ) : null;
   return [confirm, dialog];
+}
+
+/* ---------- Unsaved-changes guard ----------
+   A page with unsaved work calls useUnsavedGuard({ dirty, save, ... }). Every link in the admin
+   shell (sidebar, breadcrumbs, sign-out) and the page's own Back button then ask before leaving:
+   keep editing, save and leave, or discard. Closing the tab is covered by the page itself
+   (beforeunload); the browser's Back button can't be intercepted by this kind of router. */
+
+const noGuard = { register() {}, isDirty: () => false, requestLeave: null };
+export const UnsavedGuardContext = createContext(noGuard);
+
+export function UnsavedGuardProvider({ children }) {
+  const navigate = useNavigate();
+  const [confirm, confirmDialog] = useConfirm();
+  const getGuard = useRef(null);
+  const register = useCallback((fn) => {
+    getGuard.current = fn;
+  }, []);
+  const isDirty = useCallback(() => Boolean(getGuard.current?.()?.dirty), []);
+
+  // Resolves true when it is fine to leave (nothing to lose, saved, or discarded), and goes to `to`.
+  const requestLeave = useCallback(
+    async (to) => {
+      const guard = getGuard.current?.();
+      if (guard?.dirty) {
+        const answer = await confirm({
+          title: 'Leave without saving?',
+          description: guard.description || 'You have unsaved changes. If you leave now, they will be lost.',
+          confirmLabel: 'Discard changes',
+          cancelLabel: 'Keep editing',
+          tone: 'danger',
+          alternate: guard.save ? { label: guard.saveLabel || 'Save & leave', value: 'save' } : undefined,
+        });
+        if (answer === 'save') {
+          if (!(await guard.save())) return false; // validation failed: stay and show the errors
+        } else if (!answer) {
+          return false;
+        }
+      }
+      if (to) navigate(to);
+      return true;
+    },
+    [confirm, navigate]
+  );
+
+  const value = useMemo(() => ({ register, isDirty, requestLeave }), [register, isDirty, requestLeave]);
+  return (
+    <UnsavedGuardContext.Provider value={value}>
+      {children}
+      {confirmDialog}
+    </UnsavedGuardContext.Provider>
+  );
+}
+
+// guard: { dirty, description?, save?: () => Promise<boolean>, saveLabel? }. Returns
+//   leave(to)       - go to `to`, asking first when there are unsaved changes
+//   guardClick(to)  - onClick handler for a link to `to`: plain clicks ask first, new-tab clicks pass
+export function useUnsavedGuard(guard) {
+  const { register, isDirty, requestLeave } = useContext(UnsavedGuardContext);
+  const navigate = useNavigate();
+  const latest = useRef(guard);
+  latest.current = guard;
+  useEffect(() => {
+    register(() => latest.current);
+    return () => register(null);
+  }, [register]);
+  const leave = useCallback((to) => (requestLeave ? requestLeave(to) : Promise.resolve(navigate(to))), [requestLeave, navigate]);
+  const guardClick = useCallback(
+    (to) => (e) => {
+      if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+      if (!isDirty()) return;
+      e.preventDefault();
+      leave(to);
+    },
+    [isDirty, leave]
+  );
+  return { leave, guardClick };
+}
+
+// For links that live outside the page that registered the guard (the shell).
+export function useShellGuard() {
+  const { isDirty, requestLeave } = useContext(UnsavedGuardContext);
+  const guardClick = useCallback(
+    (to) => (e) => {
+      if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+      if (!isDirty() || !requestLeave) return;
+      e.preventDefault();
+      requestLeave(to);
+    },
+    [isDirty, requestLeave]
+  );
+  return { guardClick, requestLeave };
 }
 
 /* ---------- Icons and menus ---------- */

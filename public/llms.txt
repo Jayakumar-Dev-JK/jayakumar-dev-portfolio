@@ -1,5 +1,5 @@
-# Jayakumar Jayakrishnan - UI/UX Designer & Frontend Developer
-> Portfolio of Jayakumar Jayakrishnan, a UI/UX designer and frontend developer based in Chennai, India. Case studies, design process and product work for web and mobile.
+# Jayakumar - UI/UX Designer & Frontend Developer
+> Portfolio of Jayakumar, a UI/UX designer and frontend developer based in Chennai, India. Case studies, design process and product work for web and mobile.
 
 - [Portfolio](https://jayakumarwebdev.netlify.app/): About, experience, tech stack and skills, projects, contact
 - [LinkedIn](https://www.linkedin.com/in/Jayakumar-FullStackDeveloper/)

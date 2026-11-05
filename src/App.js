@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useRef, lazy, Suspense } from "react";
 import Hero from "./components/hero";
+import { pickActiveSection, VISIBILITY_THRESHOLDS } from "./lib/activeSection";
 
 // Below-the-fold sections are split out so the hero (LCP) is not delayed by their code.
 const About = lazy(() => import("./components/about"));
@@ -48,54 +49,36 @@ function App() {
     };
   }, []);
 
+  // The current section (phone header title, highlighted nav item) is the one filling the most of the screen.
+  // Every section is watched, whatever its height, and re-read as it scrolls (no scroll listener).
   useEffect(() => {
-    const observerOptions = {
-      root: null,
-      rootMargin: "0px",
-      threshold: 0.6,
-    };
+    const watched = [profileRef.current, ...sections.current].filter(Boolean);
+    const visible = new Map(watched.map((el) => [el.id, 0])); // keeps document order for ties
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => visible.set(entry.target.id, entry.isIntersecting ? entry.intersectionRect.height : 0));
+      const id = pickActiveSection(visible);
+      if (id) setActiveSection(id);
+    }, { root: null, threshold: VISIBILITY_THRESHOLDS });
+    watched.forEach((el) => observer.observe(el));
+    return () => observer.disconnect();
+  }, []);
 
-    const observerCallback = (entries) => {
-      entries.forEach((entry) => {
-        if (entry.isIntersecting) {
-          setActiveSection(entry.target.id);
-        }
-      });
-    };
-
-    const observer = new IntersectionObserver(
-      observerCallback,
-      observerOptions
+  // Arriving from another page: a project page sends { scrollTo: "projects" } so the address
+  // stays a clean "/". A hash link (e.g. "/#projects") is honoured too. The sections load in
+  // chunks, so scroll again once they have taken their place.
+  useEffect(() => {
+    const hint = window.history.state?.usr?.scrollTo;
+    const hash = decodeURIComponent(window.location.hash.slice(1));
+    const id = hint || hash;
+    if (!id || id.startsWith("post=")) return undefined;
+    if (hint) {
+      // Used once: a refresh or later visit to "/" must not scroll again.
+      window.history.replaceState({ ...window.history.state, usr: null }, "");
+    }
+    const timers = [300, 1200].map((ms) =>
+      setTimeout(() => document.getElementById(id)?.scrollIntoView(), ms)
     );
-
-    const currentSections = sections.current;
-    currentSections.forEach((section) => {
-      if (section) {
-        observer.observe(section);
-      }
-    });
-
-    // The profile (hero) is taller than the other sections, so it is marked active
-    // once 30% of it is in view instead of 60%.
-    const profileObserver = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting && entry.intersectionRatio >= 0.3) {
-          setActiveSection(entry.target.id);
-        }
-      },
-      { root: null, rootMargin: "0px", threshold: 0.3 }
-    );
-    const profileSection = profileRef.current;
-    if (profileSection) profileObserver.observe(profileSection);
-
-    return () => {
-      profileObserver.disconnect();
-      currentSections.forEach((section) => {
-        if (section) {
-          observer.unobserve(section);
-        }
-      });
-    };
+    return () => timers.forEach(clearTimeout);
   }, []);
 
   const handleNavClick = (id) => {
@@ -123,7 +106,7 @@ function App() {
           className="absolute inset-0 z-0 transition duration-300"
         ></div>
         {/* Mobile Header */}
-        <div className="w-full bg-slate-900 border-b-2 border-spacing-1 border-slate-500 lg:hidden fixed top-0 py-2 px-6 z-40">
+        <div data-fixed-header="" className="w-full bg-slate-900 border-b-2 border-spacing-1 border-slate-500 lg:hidden fixed top-0 py-2 px-6 z-40">
           <button
             className="text-slate-600 flex justify-between w-full"
             onClick={toggleMenu}
@@ -308,7 +291,7 @@ function App() {
               </div>
             </header>
             <main
-              className="lg:px-6 lg:w-7/12 h-full overflow-y-auto transition duration-300 relative"
+              className="lg:px-6 lg:w-7/12 h-full max-lg:overflow-x-clip lg:overflow-y-auto transition duration-300 relative"
               style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
             >
               <section id="profile" ref={profileRef}>

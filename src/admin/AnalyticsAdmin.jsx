@@ -194,7 +194,7 @@ export default function AnalyticsAdmin() {
                 <DailyBars title="Outbound clicks per day" unit="clicks" series={summary.daysList.map((d) => ({ ...d, value: d.clicks }))} />
               </div>
               <details className="mb-8 text-sm">
-                <summary className="cursor-pointer text-slate-400 hover:text-teal-300">Show daily numbers as a table</summary>
+                <summary className="cursor-pointer rounded py-1.5 text-slate-400 max-md:py-3 hover:text-teal-300 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-admin-accent">Show daily numbers as a table</summary>
                 <div className="mt-3 max-h-72 overflow-auto">
                   <table className="w-full text-left">
                     <thead className="text-xs uppercase tracking-wide text-admin-muted">
@@ -262,8 +262,8 @@ export default function AnalyticsAdmin() {
           <div className="rounded-lg border border-slate-700/70 p-4 text-xs text-admin-muted">
             <p className="mb-1 font-medium text-slate-400">How these numbers work</p>
             <ul className="list-disc space-y-1 pl-4">
-              <li>A view is counted when a post popup opens, at most once per post per browser session every 30 minutes. Cards that open a link count as clicks, not views.</li>
-              <li>An outbound click is counted when a visitor opens a project's link, from a card or from a post popup. What happens on the destination site (Behance, Figma, GitHub…) isn't measured.</li>
+              <li>A view is counted when a project's page is opened (from the portfolio, a shared link or Google) or a post popup opens, at most once per project per browser session every 30 minutes.</li>
+              <li>An outbound click is counted when a visitor opens a project's link, from a project page or a post popup. What happens on the destination site (Behance, Figma, GitHub…) isn't measured.</li>
               <li>Browsers that have signed in to this admin area, and automated browsers, aren't counted.</li>
               <li>Events are sent from visitors' browsers, so they can be faked. Treat the numbers as indicative.</li>
               <li>No visitor IDs, IP addresses or cookies are stored, so unique visitors aren't reported.</li>

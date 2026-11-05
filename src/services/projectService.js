@@ -14,7 +14,7 @@ import {
 import { db } from '../lib/firebase';
 import { LEGACY_PROJECTS } from '../data/legacyProjects';
 import { SAMPLE_POST } from '../data/samplePost';
-import { parseTags, parseVideoUrl, validateProject } from '../lib/validation';
+import { nextPreviousSlugs, parseTags, parseVideoUrl, validateProject } from '../lib/validation';
 import { auditWrite } from './auditService';
 import { listCategories, seedDefaultCategories } from './categoryService';
 
@@ -57,6 +57,13 @@ function editableFields(input) {
   };
 }
 
+// The old web address of a published project is kept when its slug changes (see nextPreviousSlugs).
+function slugHistory(existing, newSlug) {
+  const next = nextPreviousSlugs(existing, newSlug);
+  const before = Array.isArray(existing?.previousSlugs) ? existing.previousSlugs : [];
+  return JSON.stringify(next) === JSON.stringify(before) ? {} : { previousSlugs: next };
+}
+
 export async function listProjects() {
   const snap = await getDocs(query(projectsCol(), orderBy('updatedAt', 'desc'), limit(ADMIN_LIST_LIMIT)));
   return snap.docs.map((d) => ({ id: d.id, ...d.data() }));
@@ -72,10 +79,18 @@ export async function isSlugTaken(slug, exceptId) {
   return snap.docs.some((d) => d.id !== exceptId);
 }
 
+// An address a published project used before. It redirects to that project, so it can't be reused.
+export async function isSlugReserved(slug, exceptId) {
+  const snap = await getDocs(query(projectsCol(), where('previousSlugs', 'array-contains', slug), limit(2)));
+  return snap.docs.some((d) => d.id !== exceptId);
+}
+
 async function assertValid(input, { publish, exceptId }) {
   const errors = validateProject(input, { publish, categories: await listCategories() });
   if (!errors.slug && (await isSlugTaken(input.slug, exceptId))) {
     errors.slug = 'Another project already uses this slug.';
+  } else if (!errors.slug && (await isSlugReserved(input.slug, exceptId))) {
+    errors.slug = 'This address belonged to another project before and now redirects to it. Choose a different slug.';
   }
   if (Object.keys(errors).length) throw new ValidationError(errors);
 }
@@ -114,7 +129,13 @@ export async function updateProject(id, input, uid, expectedUpdatedAt) {
     if (expectedUpdatedAt != null && current !== expectedUpdatedAt) {
       throw new ConflictError('This project was changed somewhere else after you opened it. Reload to see the latest version.');
     }
-    tx.update(ref, { ...editableFields(input), updatedAt: serverTimestamp(), updatedBy: uid });
+    const existing = snap.data();
+    tx.update(ref, {
+      ...editableFields(input),
+      ...slugHistory(existing, input.slug),
+      updatedAt: serverTimestamp(),
+      updatedBy: uid,
+    });
     const [auditRef, auditData] = auditWrite(uid, 'update', 'project', id);
     tx.set(auditRef, auditData);
   });

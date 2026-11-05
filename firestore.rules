@@ -57,7 +57,7 @@ service cloud.firestore {
           "title", "slug", "type", "shortDescription", "description", "categoryIds", "techStack",
           "coverMedia", "media", "links", "projectUrl", "featured", "sortOrder", "status",
           "createdAt", "updatedAt", "publishedAt", "createdBy", "updatedBy", "deletedAt",
-          "display", "gallery"
+          "display", "gallery", "previousSlugs"
         ])
         && d.keys().hasAll([
           "title", "slug", "type", "shortDescription", "categoryIds", "techStack", "coverMedia",
@@ -76,6 +76,7 @@ service cloud.firestore {
         && (!("projectUrl" in d) || d.projectUrl == "" || isHttpsUrl(d.projectUrl))
         && (!("display" in d) || d.display in ["link", "gallery"])
         && (!("gallery" in d) || (d.gallery is list && d.gallery.size() <= 20))
+        && (!("previousSlugs" in d) || (d.previousSlugs is list && d.previousSlugs.size() <= 20))
         && d.featured is bool
         && d.sortOrder is number
         && d.status in ["draft", "published", "archived"]

@@ -12,6 +12,7 @@ export const LIMITS = {
   slug: 80,
   shortDescription: 300,
   description: 5000,
+  previousSlugs: 20,
   techStack: 20,
   tag: 40,
   links: 10,
@@ -22,6 +23,16 @@ export const LIMITS = {
   categoryDescription: 300,
   gallery: 20,
 };
+
+// The slug is the project page's web address. When a published project gets a new slug, the old
+// one is kept so visitors and search engines are redirected instead of landing on a 404.
+export function nextPreviousSlugs(stored, newSlug) {
+  const previous = Array.isArray(stored?.previousSlugs) ? stored.previousSlugs : [];
+  const wasLive = stored?.status === 'published' || Boolean(stored?.publishedAt);
+  const list = wasLive && stored?.slug && stored.slug !== newSlug ? [...previous, stored.slug] : [...previous];
+  // The current slug never redirects away from itself; keep the newest entries within the limit.
+  return [...new Set(list)].filter((slug) => slug !== newSlug).slice(-LIMITS.previousSlugs);
+}
 
 export function slugify(value) {
   return String(value || '')

@@ -13,7 +13,7 @@ import {
   FaLayerGroup,
   FaTags,
 } from 'react-icons/fa';
-import { BrandMark, Icon, MenuButton, OWNER, useSession } from './ui';
+import { BrandMark, Icon, MenuButton, OWNER, UnsavedGuardProvider, useSession, useShellGuard } from './ui';
 
 // Sidebar + top bar around every signed-in admin page.
 // Add a nav entry here when its page and route exist.
@@ -95,8 +95,9 @@ function Avatar({ size = 'h-8 w-8' }) {
   );
 }
 
-export default function AdminShell() {
+function ShellLayout() {
   const { user } = useSession();
+  const { guardClick, requestLeave } = useShellGuard();
   const { pathname } = useLocation();
   const [collapsed, setCollapsed] = useState(readCollapsed);
   const trail = breadcrumbFor(pathname);
@@ -109,7 +110,7 @@ export default function AdminShell() {
   };
 
   const navClass = (active) =>
-    `group relative flex h-11 items-center gap-3 rounded-lg px-3 text-sm font-medium focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-admin-accent md:h-10 ${
+    `group relative flex h-11 shrink-0 items-center gap-3 whitespace-nowrap rounded-lg px-3 text-sm font-medium focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-admin-accent md:h-10 ${
       collapsed ? 'md:justify-center md:px-0' : ''
     } ${active ? 'bg-admin-accent-bg text-admin-accent-text' : 'text-admin-muted hover:bg-slate-800/60 hover:text-admin-label'}`;
 
@@ -156,6 +157,7 @@ export default function AdminShell() {
                 to={item.to}
                 aria-current={active ? 'page' : undefined}
                 aria-label={collapsed ? item.label : undefined}
+                onClick={guardClick(item.to)}
                 className={navClass(active)}
               >
                 <Icon as={item.icon} />
@@ -201,19 +203,10 @@ export default function AdminShell() {
             </div>
           </div>
         </div>
-        <a
-          href="/"
-          target="_blank"
-          rel="noreferrer noopener"
-          className="flex h-11 items-center gap-3 rounded-lg px-3 text-sm font-medium text-admin-muted hover:text-admin-label md:hidden"
-        >
-          <Icon as={FaExternalLinkAlt} size={16} />
-          View public site
-        </a>
       </aside>
 
       <div className="flex min-w-0 flex-1 flex-col">
-        <header className="flex min-h-16 flex-wrap items-center justify-between gap-4 border-b border-admin-subtle px-4 py-2 md:px-8">
+        <header className="sticky top-0 z-30 flex min-h-16 flex-wrap items-center justify-between gap-4 border-b border-admin-subtle bg-admin-app px-4 py-2 md:px-8">
           <nav aria-label="Breadcrumb" className="text-sm text-admin-muted">
             <ol className="flex flex-wrap items-center">
               <li>Admin</li>
@@ -221,7 +214,7 @@ export default function AdminShell() {
                 <li key={label} className="flex items-center">
                   <span aria-hidden="true" className="px-1.5">/</span>
                   {to && i < trail.length - 1 ? (
-                    <Link to={to} className="hover:text-admin-accent focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-admin-accent">
+                    <Link to={to} onClick={guardClick(to)} className="inline-flex min-h-6 items-center rounded hover:text-admin-accent focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-admin-accent max-md:min-h-11">
                       {label}
                     </Link>
                   ) : (
@@ -247,7 +240,7 @@ export default function AdminShell() {
             }
             items={[
               { label: 'View public site', href: '/', external: true },
-              { label: 'Sign out', tone: 'danger', onSelect: signOutUser },
+              { label: 'Sign out', tone: 'danger', onSelect: async () => (await requestLeave()) && signOutUser() },
             ]}
           />
         </header>
@@ -257,5 +250,14 @@ export default function AdminShell() {
         </main>
       </div>
     </div>
+  );
+}
+
+// The guard provider sits outside the layout so the layout's links and any page can use it.
+export default function AdminShell() {
+  return (
+    <UnsavedGuardProvider>
+      <ShellLayout />
+    </UnsavedGuardProvider>
   );
 }

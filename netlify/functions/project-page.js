@@ -1,0 +1,92 @@
+/* Netlify Function: server-rendered head + content for GET /projects/:slug.
+ *
+ * Routed by public/_redirects (/projects/:slug -> this function). It reads the published
+ * project from Firestore, injects its title, description, canonical, social tags, structured
+ * data and visible text into the site's built index.html, and returns that. React then takes
+ * over in the browser. Publishing a project in the admin is all that is needed - no redeploy.
+ *
+ * Unknown, draft, archived or deleted slugs get a real 404 with noindex.
+ * Environment: FIREBASE_PROJECT_ID (falls back to REACT_APP_FIREBASE_PROJECT_ID).
+ */
+const seo = require('../lib/seo');
+
+const CACHE_HEADERS = {
+  'Content-Type': 'text/html; charset=UTF-8',
+  'Cache-Control': 'public, max-age=0, must-revalidate',
+  // Netlify's CDN keeps the page for 5 minutes and refreshes it in the background after that.
+  'Netlify-CDN-Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600',
+};
+
+// The project name comes from the address the visitor asked for (/projects/<name>). Netlify does not fill a
+// :placeholder into the query string of a rewrite, so relying on ?slug= made every real page a 404. The
+// ?slug= form still works for direct calls to the function.
+function slugFromEvent(event) {
+  const fromAddress = (value) => String(value || '').match(/\/projects\/([^/?#]+)\/?(?:[?#].*)?$/);
+  const match = fromAddress(event.path) || fromAddress(event.rawUrl);
+  let raw = match ? match[1] : String(event.queryStringParameters?.slug || '');
+  try {
+    raw = decodeURIComponent(raw);
+  } catch {
+    // keep it as typed; the slug check below rejects anything odd
+  }
+  return raw.toLowerCase();
+}
+
+function createHandler({ fetchImpl = fetch, env = process.env } = {}) {
+  return async function handler(event) {
+    const projectId = env.FIREBASE_PROJECT_ID || env.REACT_APP_FIREBASE_PROJECT_ID;
+    const siteUrl = env.SITE_URL || seo.DEFAULT_SITE_URL;
+    const host = event.headers?.['x-forwarded-host'] || event.headers?.host;
+    const origin = host ? `https://${host}` : siteUrl;
+    const slug = slugFromEvent(event);
+
+    let shell;
+    try {
+      const res = await fetchImpl(`${origin}/index.html`);
+      if (!res.ok) throw new Error(`index.html ${res.status}`);
+      shell = await res.text();
+    } catch (err) {
+      console.error('project-page: could not load the app shell', err.message);
+      return { statusCode: 302, headers: { Location: '/#projects', 'Cache-Control': 'no-store' }, body: '' };
+    }
+
+    const notFound = () => ({
+      statusCode: 404,
+      headers: { ...CACHE_HEADERS, 'Netlify-CDN-Cache-Control': 'public, s-maxage=60' },
+      body: seo.renderNotFoundPage(shell),
+    });
+
+    if (!projectId || !seo.SLUG_PATTERN.test(slug) || slug.length > 80) return notFound();
+
+    let project;
+    try {
+      [project] = await seo.fetchPublishedProjects({ projectId, slug, fetchImpl });
+    } catch (err) {
+      console.error('project-page: Firestore error', err.message);
+      // Serve the plain app so the page still works; the app loads the project itself.
+      return { statusCode: 200, headers: { 'Content-Type': 'text/html; charset=UTF-8', 'Cache-Control': 'no-store' }, body: shell };
+    }
+    if (!project || project.slug !== slug) {
+      // A project that was renamed keeps working at its old address: send it to the new one.
+      try {
+        const [renamed] = await seo.fetchPublishedProjects({ projectId, previousSlug: slug, fetchImpl });
+        if (renamed && seo.SLUG_PATTERN.test(renamed.slug || '')) {
+          return {
+            statusCode: 301,
+            headers: { Location: `/projects/${renamed.slug}`, 'Cache-Control': 'public, max-age=0, must-revalidate' },
+            body: '',
+          };
+        }
+      } catch (err) {
+        console.error('project-page: redirect lookup failed', err.message);
+      }
+      return notFound();
+    }
+
+    return { statusCode: 200, headers: CACHE_HEADERS, body: seo.renderProjectPage(shell, project, siteUrl) };
+  };
+}
+
+exports.handler = createHandler();
+exports.createHandler = createHandler;
+exports.slugFromEvent = slugFromEvent;

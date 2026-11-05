@@ -17,11 +17,10 @@
   },
   "scripts": {
     "start": "react-scripts start",
-    "prebuild": "node -e \"require.resolve('react-scripts/package.json')\" || npm install --include=dev --no-audit --no-fund",
     "build": "react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject",
-    "test:functions": "node --test netlify/tests",
+    "test:functions": "node --test \"netlify/tests/**/*.test.js\"",
     "deploy:rules": "npx firebase-tools deploy --only firestore:rules",
     "upload:logos": "node scripts/upload-tech-logos.js"
   },
