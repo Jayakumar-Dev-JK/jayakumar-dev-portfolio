@@ -18,18 +18,22 @@ test('design is selected by default and shows the empty state', () => {
   expect(screen.getByText('Design projects are coming soon.')).toBeInTheDocument();
 });
 
-test('development lists the built-in projects and filters by category', () => {
+test('development opens on its first category that has projects, and the chips filter', () => {
   renderProjects();
   fireEvent.click(screen.getByRole('button', { name: 'Development' }));
-  expect(screen.getAllByRole('heading', { level: 3 })).toHaveLength(4);
+  // There is no "All" chip: the tab opens on Web Apps (the first category with projects).
+  expect(screen.queryByRole('button', { name: /^All/ })).toBeNull();
+  expect(screen.getByRole('button', { name: /Web Apps/ })).toHaveAttribute('aria-pressed', 'true');
+  expect(screen.getAllByRole('heading', { level: 3 })).toHaveLength(2);
 
   fireEvent.click(screen.getByRole('button', { name: /E-Commerce/ }));
   const titles = screen.getAllByRole('heading', { level: 3 }).map((h) => h.textContent);
   expect(titles).toEqual([expect.stringContaining('Laya')]);
 
-  // Switching mode resets the category filter.
+  // Switching tabs goes back to that tab's default category.
   fireEvent.click(screen.getByRole('button', { name: 'Design' }));
-  expect(screen.getByRole('button', { name: /^All/ })).toHaveAttribute('aria-pressed', 'true');
+  fireEvent.click(screen.getByRole('button', { name: 'Development' }));
+  expect(screen.getByRole('button', { name: /Web Apps/ })).toHaveAttribute('aria-pressed', 'true');
 });
 
 test('cards without an image, or with a broken one, show the placeholder', () => {
@@ -57,6 +61,7 @@ test('cards without an image, or with a broken one, show the placeholder', () =>
 test('development cards open their own project page', () => {
   renderProjects();
   fireEvent.click(screen.getByRole('button', { name: 'Development' }));
+  fireEvent.click(screen.getByRole('button', { name: /E-Commerce/ }));
   const link = screen.getByRole('link', { name: /Laya/ });
   expect(link).toHaveAttribute('href', '/projects/laya');
   expect(link).not.toHaveAttribute('target');

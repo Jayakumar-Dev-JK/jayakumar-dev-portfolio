@@ -139,7 +139,7 @@ function ProjectThumbnail({ project }) {
           height="360"
           loading="lazy"
           onError={() => setFailed(true)}
-          className="h-full w-full object-contain"
+          className="h-full w-full object-contain transition-transform duration-500 ease-out group-hover:scale-[1.04] motion-reduce:transition-none motion-reduce:group-hover:scale-100"
         />
         {slideCount > 1 && (
           <span className="absolute right-2 top-2 flex items-center gap-1 rounded-full bg-slate-900/80 px-2 py-0.5 text-[10px] font-semibold text-slate-100">
@@ -162,7 +162,7 @@ function ProjectThumbnail({ project }) {
       height="360"
       loading="lazy"
       onError={() => setFailed(true)}
-      className="aspect-video w-full object-cover object-top"
+      className="aspect-video w-full object-cover object-top transition-transform duration-500 ease-out group-hover:scale-[1.04] motion-reduce:transition-none motion-reduce:group-hover:scale-100"
     />
   );
 }
@@ -181,30 +181,51 @@ function findScrollRoot(el) {
   return null;
 }
 
-// How much room the section has: the visible height of whatever scrolls, and the height of a bar
-// that is fixed above it (the phone header, marked data-fixed-header).
-function useScrollSpace(ref) {
-  const [space, setSpace] = useState({ height: 0, top: 0 });
+// Decides whether the heading and tabs should stick, from real measurements only (never from how many
+// projects there are): sticky is on exactly when the section's full rendered height is taller than the
+// room the visitor can see. Re-measured whenever the section resizes (tab switch, data, fonts, images,
+// responsive layout) or the viewport changes. No scroll listeners.
+function useStickyDecision(sectionRef, barRef) {
+  const [m, setM] = useState({ sticky: false, content: 0, available: 0, top: 0, bar: 0 });
   useEffect(() => {
-    const el = ref.current;
-    if (!el) return undefined;
-    const root = findScrollRoot(el);
+    const section = sectionRef.current;
+    if (!section) return undefined;
+    let frame = 0;
     const measure = () => {
-      const bar = root ? null : document.querySelector('[data-fixed-header]');
-      const top = bar ? Math.round(bar.getBoundingClientRect().height) : 0;
-      const height = root ? root.clientHeight : window.innerHeight;
-      setSpace((prev) => (prev.height === height && prev.top === top ? prev : { height, top }));
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(() => {
+        const root = findScrollRoot(section);
+        // On phones the page scrolls and a fixed header (data-fixed-header) covers its top edge.
+        const fixed = root ? null : document.querySelector('[data-fixed-header]');
+        const top = fixed ? Math.round(fixed.getBoundingClientRect().height) : 0;
+        const viewport = root ? root.clientHeight : window.visualViewport?.height || window.innerHeight;
+        const available = Math.round(viewport - top);
+        const content = Math.round(section.offsetHeight);
+        const bar = Math.round(barRef.current?.offsetHeight || 0);
+        const sticky = content > available;
+        setM((prev) =>
+          prev.sticky === sticky && prev.content === content && prev.available === available && prev.top === top && prev.bar === bar
+            ? prev
+            : { sticky, content, available, top, bar }
+        );
+      });
     };
     measure();
-    window.addEventListener('resize', measure);
     const observer = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(measure) : null;
+    observer?.observe(section);
+    const root = findScrollRoot(section);
     observer?.observe(root || document.documentElement);
+    window.addEventListener('resize', measure);
+    window.visualViewport?.addEventListener('resize', measure);
+    document.fonts?.ready?.then(measure); // web fonts change line heights
     return () => {
-      window.removeEventListener('resize', measure);
+      cancelAnimationFrame(frame);
       observer?.disconnect();
+      window.removeEventListener('resize', measure);
+      window.visualViewport?.removeEventListener('resize', measure);
     };
-  }, [ref]);
-  return space;
+  }, [sectionRef, barRef]);
+  return m;
 }
 
 // Fades a card in when it scrolls into view. Without IntersectionObserver, or when the visitor
@@ -232,7 +253,7 @@ function useReveal(enabled) {
 }
 
 // `reveal` (the card's position in the list) turns on the scroll-in animation.
-export function ProjectCard({ project, onOpen, reveal }) {
+export function ProjectCard({ project, onOpen, reveal, scrollMargin }) {
   const shownTags = project.tags.slice(0, MAX_TAGS);
   const hiddenTags = project.tags.slice(MAX_TAGS);
   const animated = reveal !== undefined;
@@ -241,18 +262,21 @@ export function ProjectCard({ project, onOpen, reveal }) {
   return (
     <li
       ref={revealRef}
-      style={animated && !shown ? { transitionDelay: `${(reveal % 4) * 70}ms` } : undefined}
-      className={`group relative grid gap-4 rounded-lg p-4 transition-all sm:grid-cols-8 sm:gap-6 md:gap-4 overflow-hidden ${
+      style={{
+        ...(animated && !shown ? { transitionDelay: `${(reveal % 4) * 70}ms` } : null),
+        ...(scrollMargin ? { scrollMarginTop: scrollMargin } : null),
+      }}
+      className={`group relative grid gap-4 rounded-lg p-4 transition-all sm:grid-cols-8 sm:gap-6 md:grid-cols-1 md:gap-4 lg:grid-cols-8 overflow-hidden lg:hover:-translate-y-0.5 motion-reduce:hover:translate-y-0 ${
         animated ? `duration-500 ease-out motion-reduce:transition-none ${shown ? 'translate-y-0 opacity-100' : 'translate-y-5 opacity-0'}` : ''
       }`}
     >
       <div className="absolute -inset-x-4 -inset-y-4 z-0 hidden transition motion-reduce:transition-none lg:-inset-x-6 lg:block lg:group-hover:bg-slate-600/15 lg:group-hover:shadow-[inset_0_1px_0_0_rgba(148,163,184,0.1)] lg:group-hover:drop-shadow-lg"></div>
 
-      <div className="z-10 overflow-hidden rounded-md sm:col-span-3">
+      <div className="z-10 overflow-hidden rounded-md sm:col-span-3 md:col-span-1 lg:col-span-3">
         <ProjectThumbnail project={project} />
       </div>
 
-      <div className="z-10 min-w-0 sm:col-span-5">
+      <div className="z-10 min-w-0 sm:col-span-5 md:col-span-1 lg:col-span-5">
         <h3 className="font-medium leading-snug text-slate-200">
           <ProjectTitleAction project={project} onOpen={onOpen} />
         </h3>
@@ -283,24 +307,26 @@ export function ProjectCard({ project, onOpen, reveal }) {
   );
 }
 
-// variant "sticky": the heading and tabs stay pinned at the top while the cards scroll with the page.
-// variant "panel":  a long list becomes a full-screen panel with its own scroll; a short one just fits
-//                   its content. Either way the scrollbar is hidden (see index.css).
-// `showCategories={false}` hides the category chips, leaving only the Design / Development tabs.
+// The category to show first in a tab: "Websites" when it has projects, otherwise the first category that
+// does. There is no "All" chip, so every tab always opens on a real category.
+function defaultCategory(projects, chips) {
+  const filled = (id) => projects.some((p) => p.categoryIds.includes(id));
+  return (chips.find((c) => c.id === 'websites' && filled(c.id)) || chips.find((c) => filled(c.id)) || chips[0])?.id ?? null;
+}
+
 // `data` replaces the Firestore data (used by the review page and tests).
-function ProjectsPage({ data, variant = 'sticky', showCategories = true }) {
+function ProjectsPage({ data }) {
   const [mode, setMode] = useState('design');
-  const [category, setCategory] = useState('all');
+  const [category, setCategory] = useState(null); // null = this tab's default category
   const { status, projects: allProjects, categories } = usePortfolioData(data);
   const activeMode = MODES.find((m) => m.id === mode);
   const [openPost, setOpenPost] = useState(null);
   const pushedHash = useRef(false);
-  const panel = variant === 'panel';
 
   const sectionRef = useRef(null);
-  const listRef = useRef(null);
+  const barRef = useRef(null);
   const sentinelRef = useRef(null);
-  const { height: spaceHeight, top: spaceTop } = useScrollSpace(sectionRef);
+  const { sticky, content, available, top: stickyTop, bar: barHeight } = useStickyDecision(sectionRef, barRef);
   const [stuck, setStuck] = useState(false);
 
   // Posts get a shareable URL: /#post=<slug>. Opening one adds a history entry so Back closes it.
@@ -346,20 +372,29 @@ function ProjectsPage({ data, variant = 'sticky', showCategories = true }) {
     return () => window.removeEventListener('popstate', sync);
   }, [status, allProjects]);
 
-  // The bar gets a divider once it has stuck to the top (sticky variant).
+  // A divider appears under the bar once it has actually stuck (IntersectionObserver, no scroll listener).
   useEffect(() => {
     const sentinel = sentinelRef.current;
-    if (panel || !sentinel || typeof IntersectionObserver === 'undefined') {
+    if (!sticky || !sentinel || typeof IntersectionObserver === 'undefined') {
       setStuck(false);
       return undefined;
     }
     const observer = new IntersectionObserver(
       ([entry]) => setStuck(!entry.isIntersecting && entry.boundingClientRect.top < (entry.rootBounds?.top ?? 0) + 1),
-      { rootMargin: `-${spaceTop + 1}px 0px 0px 0px` }
+      { rootMargin: `-${stickyTop + 1}px 0px 0px 0px` }
     );
     observer.observe(sentinel);
     return () => observer.disconnect();
-  }, [panel, spaceTop]);
+  }, [sticky, stickyTop]);
+
+  const projects = allProjects.filter((p) => p.type === activeMode.type);
+  const chips = categories
+    .filter((c) => (c.projectTypes || []).includes(activeMode.type))
+    .map((c) => ({ id: c.id, label: c.name }));
+  const activeCategory = category ?? defaultCategory(projects, chips);
+  const countFor = (id) => projects.filter((p) => p.categoryIds.includes(id)).length;
+  // A tab with no categories configured simply lists all of its projects.
+  const visibleProjects = chips.length === 0 ? projects : projects.filter((p) => p.categoryIds.includes(activeCategory));
 
   // Switching tabs while scrolled deep lands on the first card of the new list, not mid-air.
   const firstRender = useRef(true);
@@ -368,53 +403,41 @@ function ProjectsPage({ data, variant = 'sticky', showCategories = true }) {
       firstRender.current = false;
       return;
     }
-    const behavior = prefersReducedMotion() ? 'auto' : 'smooth';
-    if (panel) {
-      listRef.current?.scrollTo?.({ top: 0, behavior });
-    } else if (sectionRef.current && sectionRef.current.getBoundingClientRect().top < spaceTop - 1) {
-      sectionRef.current.scrollIntoView?.({ behavior, block: 'start' });
+    const section = sectionRef.current;
+    if (section && section.getBoundingClientRect().top < stickyTop - 1) {
+      section.scrollIntoView?.({ behavior: prefersReducedMotion() ? 'auto' : 'smooth', block: 'start' });
     }
-  }, [mode, category]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [mode, activeCategory]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const switchMode = (id) => {
     setMode(id);
-    setCategory('all');
+    setCategory(null);
   };
-
-  const projects = allProjects.filter((p) => p.type === activeMode.type);
-  const chips = [
-    { id: 'all', label: 'All' },
-    ...categories
-      .filter((c) => (c.projectTypes || []).includes(activeMode.type))
-      .map((c) => ({ id: c.id, label: c.name })),
-  ];
-  const countFor = (id) => (id === 'all' ? projects.length : projects.filter((p) => p.categoryIds.includes(id)).length);
-  const visibleProjects = category === 'all' ? projects : projects.filter((p) => p.categoryIds.includes(category));
-
-  const barClass = `z-20 bg-slate-900 pb-2 lg:-mx-6 lg:px-6 ${
-    panel ? 'flex-none' : 'sticky top-[var(--projects-top,0px)]'
-  } ${stuck || panel ? 'border-b border-slate-800' : 'border-b border-transparent'} transition-[border-color] duration-200`;
 
   return (
     <div
       ref={sectionRef}
       data-projects-section=""
-      data-variant={variant}
-      className={`pb-2 ${panel ? 'flex flex-col' : ''}`}
-      style={{
-        '--projects-top': `${spaceTop}px`,
-        scrollMarginTop: spaceTop,
-        ...(panel && spaceHeight ? { maxHeight: `${spaceHeight - spaceTop}px` } : {}),
-      }}
+      data-sticky={sticky ? 'on' : 'off'}
+      data-content-height={content}
+      data-available-height={available}
+      className="pb-2"
+      style={{ '--projects-top': `${stickyTop}px`, scrollMarginTop: stickyTop }}
     >
       <div ref={sentinelRef} aria-hidden="true" className="-mb-px h-px" />
-      <div className={barClass} data-projects-bar="">
+      <div
+        ref={barRef}
+        data-projects-bar=""
+        className={`z-20 bg-slate-900 pb-2 transition-[border-color] duration-200 lg:-mx-6 lg:px-6 ${
+          sticky ? 'sticky top-[var(--projects-top,0px)]' : 'relative'
+        } border-b ${stuck ? 'border-slate-800' : 'border-transparent'}`}
+      >
         <div className="flex items-center justify-between gap-x-3 py-1.5 sm:gap-x-4">
           <div className="min-w-0 flex-1">
             <h2 className="z-10 text-xl font-bold text-teal-300">Projects</h2>
             <p className="mt-1 hidden text-sm text-slate-400 sm:block">{activeMode.subtitle}</p>
           </div>
-          <div className="flex min-h-[38px] shrink-0 items-stretch rounded-full border border-slate-700 p-0.5 sm:min-h-[46px] sm:p-1" role="group" aria-label="Project type">
+          <div className="flex min-h-[46px] shrink-0 items-stretch rounded-full border border-slate-700 p-0.5 sm:p-1" role="group" aria-label="Project type">
             {MODES.map(({ id, label, Icon }) => (
               <button
                 key={id}
@@ -431,16 +454,16 @@ function ProjectsPage({ data, variant = 'sticky', showCategories = true }) {
             ))}
           </div>
         </div>
-        {showCategories && (
+        {chips.length > 0 && (
           <div className="mt-1 flex gap-2 overflow-x-auto pb-1" role="group" aria-label="Filter projects by category">
             {chips.map(({ id, label }) => (
               <button
                 key={id}
                 type="button"
-                aria-pressed={category === id}
+                aria-pressed={activeCategory === id}
                 onClick={() => setCategory(id)}
-                className={`flex h-9 shrink-0 items-center gap-2 rounded-full border pl-3 pr-1.5 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-teal-300 ${
-                  category === id
+                className={`flex h-10 shrink-0 items-center gap-2 rounded-full border pl-3 pr-1.5 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-teal-300 sm:h-9 ${
+                  activeCategory === id
                     ? 'border-teal-400/40 bg-teal-400/10 text-teal-200'
                     : 'border-slate-700 text-slate-400 hover:text-teal-300'
                 }`}
@@ -448,7 +471,7 @@ function ProjectsPage({ data, variant = 'sticky', showCategories = true }) {
                 {label}
                 <span
                   className={`flex h-6 min-w-[1.5rem] items-center justify-center rounded-full px-1.5 text-xs ${
-                    category === id ? 'bg-teal-400/20 text-teal-100' : 'bg-slate-800 text-slate-400'
+                    activeCategory === id ? 'bg-teal-400/20 text-teal-100' : 'bg-slate-800 text-slate-400'
                   }`}
                 >
                   {countFor(id)}
@@ -471,12 +494,17 @@ function ProjectsPage({ data, variant = 'sticky', showCategories = true }) {
           {projects.length === 0 ? `${activeMode.label} projects are coming soon.` : 'No projects in this category yet.'}
         </p>
       )}
-      <ul
-        ref={listRef}
-        className={`space-y-2 pt-3 ${panel ? 'min-h-0 flex-1 overflow-y-auto overscroll-y-auto lg:-mx-6 lg:px-6' : ''}`}
-      >
+      {/* One column on phones, two on tablets (cards stack), one wide list beside the intro on desktop. */}
+      <ul className="space-y-2 pt-3 md:grid md:grid-cols-2 md:gap-x-4 md:gap-y-2 md:space-y-0 lg:block lg:space-y-2">
         {visibleProjects.map((project, index) => (
-          <ProjectCard key={`${mode}-${category}-${project.id}`} project={project} onOpen={openViewer} reveal={index} />
+          <ProjectCard
+            key={`${mode}-${activeCategory}-${project.id}`}
+            project={project}
+            onOpen={openViewer}
+            reveal={index}
+            // A card scrolled into view by the keyboard must clear the pinned bar.
+            scrollMargin={sticky ? stickyTop + barHeight + 8 : undefined}
+          />
         ))}
       </ul>
       {openPost && (

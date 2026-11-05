@@ -1,5 +1,6 @@
-// Sample projects for the local review page (src/pages/ProjectsPreview.jsx). Not used by the real
-// site. Thumbnails are generated SVGs, so the review works offline.
+// TEMPORARY sample data for the local review page (src/pages/ProjectsPreview.jsx). Never used by the real
+// site and never written to Firestore. Delete this file with the review page after approval.
+// Thumbnails are generated SVGs, so the review works offline.
 import { DEFAULT_CATEGORIES } from './legacyProjects';
 
 const PALETTES = [
@@ -21,37 +22,32 @@ function thumbnail(index, label) {
   return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
 }
 
+// [title, description, categories, tags]. Several projects sit in two categories, as real ones do.
 const DESIGN = [
-  ['Deskmate', 'Office seat booking and availability in real time', 'web-app', ['Figma', 'Prototyping', 'UX Research']],
-  ['Pulse', 'A social product for quick voice rooms', 'mobile-app', ['Figma', 'Mobile UI', 'Motion']],
-  ['Northwind Studio', 'Marketing website for an architecture studio', 'websites', ['Figma', 'Webflow']],
-  ['Summer Campaign', 'Poster series for a seasonal sale', 'others', ['Photoshop', 'Poster Design']],
-  ['Smart Admin', 'A calm dashboard for operations teams', 'web-app', ['Figma', 'Design System']],
-  ['Wander', 'Trip planning with offline maps', 'mobile-app', ['Figma', 'Mobile UI']],
-  ['Bloom Florist', 'Online shop redesign focused on gifting', 'websites', ['Figma', 'UI Design']],
-  ['Brand Kit', 'Logo, colours and social templates', 'others', ['Illustrator', 'Branding']],
-  ['Ledger', 'Personal finance dashboard concept', 'web-app', ['Figma', 'Data Viz']],
-  ['FitLoop', 'Workout tracking with weekly goals', 'mobile-app', ['Figma', 'Prototyping']],
-  ['Harbor Cafe', 'Menu and ordering website', 'websites', ['Figma', 'UI Design']],
-  ['Event Banners', 'Banner set for a conference', 'others', ['Photoshop', 'Illustrator']],
+  ['Deskmate', 'Office seat booking and availability in real time', ['web-app', 'websites'], ['Figma', 'Prototyping', 'UX Research']],
+  ['Pulse', 'A social product for quick voice rooms', ['mobile-app'], ['Figma', 'Mobile UI', 'Motion']],
+  ['Northwind Studio', 'Marketing website for an architecture studio', ['websites'], ['Figma', 'Webflow']],
+  ['Summer Campaign', 'Poster series for a seasonal sale', ['others'], ['Photoshop', 'Poster Design']],
+  ['Smart Admin', 'A calm dashboard for operations teams', ['web-app', 'websites'], ['Figma', 'Design System']],
+  ['Wander', 'Trip planning with offline maps', ['mobile-app'], ['Figma', 'Mobile UI']],
+  ['Bloom Florist', 'Online shop redesign focused on gifting', ['websites'], ['Figma', 'UI Design']],
+  ['Brand Kit', 'Logo, colours and social templates', ['others', 'websites'], ['Illustrator', 'Branding']],
+  ['Ledger', 'Personal finance dashboard concept', ['web-app', 'websites'], ['Figma', 'Data Viz']],
+  ['FitLoop', 'Workout tracking with weekly goals', ['mobile-app', 'websites'], ['Figma', 'Prototyping']],
 ];
 
 const DEVELOPMENT = [
-  ['Why Weds', 'Wedding events planning web application', 'web', ['React', 'Tailwind CSS', 'Node', 'MongoDB']],
-  ['Laya', 'Skin and hair care e-commerce store', 'ecommerce', ['React', 'Node', 'MongoDB']],
-  ['Thozhil Admin', 'Admin module of a job portal', 'dashboard', ['React', 'Tailwind CSS']],
-  ['Plasma Donor', 'Cloud app that connects plasma donors', 'web', ['Flask', 'IBM Db2']],
-  ['Cartwheel', 'Headless storefront with fast checkout', 'ecommerce', ['React', 'Stripe']],
-  ['Insight Board', 'Analytics dashboard with live charts', 'dashboard', ['React', 'D3']],
-  ['Notely', 'Notes app with offline sync', 'web', ['React', 'Firebase']],
-  ['Bazaar', 'Marketplace for local makers', 'ecommerce', ['Next.js', 'Postgres']],
-  ['Ops Console', 'Internal tools dashboard', 'dashboard', ['React', 'Node']],
+  ['Why Weds', 'Wedding events planning web application', ['web'], ['React', 'Tailwind CSS', 'Node', 'MongoDB']],
+  ['Laya', 'Skin and hair care e-commerce store', ['ecommerce'], ['React', 'Node', 'MongoDB']],
+  ['Thozhil Admin', 'Admin module of a job portal', ['dashboard', 'web'], ['React', 'Tailwind CSS']],
+  ['Plasma Donor', 'Cloud app that connects plasma donors', ['web'], ['Flask', 'IBM Db2']],
+  ['Cartwheel', 'Headless storefront with fast checkout', ['ecommerce', 'web'], ['React', 'Stripe']],
 ];
 
 function build(rows, type, offset) {
-  return rows.map(([title, description, category, tags], i) => ({
+  return rows.map(([title, description, categoryIds, tags], i) => ({
     id: `${type}-${i}`,
-    slug: `${title.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`,
+    slug: title.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
     type,
     title,
     description,
@@ -62,18 +58,18 @@ function build(rows, type, offset) {
     href: null,
     links: [],
     gallery: [],
-    categoryIds: [category],
+    categoryIds,
     featured: false,
     sortOrder: i,
   }));
 }
 
-// "few": a short portfolio (3 design, 2 development). "many": a long one (12 design, 9 development).
+// "full": 10 Design + 5 Development. "short": 3 Design + 2 Development (every list fits on screen).
 export function sampleProjects(size) {
   const design = build(DESIGN, 'Design', 0);
   const development = build(DEVELOPMENT, 'Development', 3);
   return {
-    projects: size === 'few' ? [...design.slice(0, 3), ...development.slice(0, 2)] : [...design, ...development],
+    projects: size === 'short' ? [...design.slice(0, 3), ...development.slice(0, 2)] : [...design, ...development],
     categories: DEFAULT_CATEGORIES,
   };
 }

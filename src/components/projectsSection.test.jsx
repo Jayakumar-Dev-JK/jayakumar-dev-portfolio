@@ -1,28 +1,55 @@
-import { fireEvent, render, screen, within } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import ProjectsPage from './projects';
 import { sampleProjects } from '../data/sampleProjects';
 
-// jsdom has no IntersectionObserver or layout, so these cover the structure and the switches;
-// the scrolling itself is checked in a real browser.
+// jsdom has no layout, so heights are supplied by mocking offsetHeight; the real scrolling is checked in a
+// browser. These cover the structure, the default category and the measurement-based sticky decision.
 
-const renderSection = (props) =>
+const renderSection = (data = sampleProjects('full')) =>
   render(
     <MemoryRouter>
-      <ProjectsPage data={sampleProjects('many')} {...props} />
+      <ProjectsPage data={data} />
     </MemoryRouter>
   );
 
+const items = (container) => container.querySelectorAll('[data-projects-section] > ul > li');
 
-test('shows the data it is given instead of fetching', () => {
+afterEach(() => jest.restoreAllMocks());
+
+test('shows the data it is given instead of fetching, opening on Websites for Design', () => {
   const { container } = renderSection();
-  // Design is the default tab: 12 sample design projects.
-  expect(container.querySelectorAll('[data-projects-section] > ul > li')).toHaveLength(12);
+  expect(screen.getByRole('button', { name: /Websites/ })).toHaveAttribute('aria-pressed', 'true');
+  expect(items(container)).toHaveLength(7);
   fireEvent.click(screen.getByRole('button', { name: 'Development' }));
-  expect(container.querySelectorAll('[data-projects-section] > ul > li')).toHaveLength(9);
+  expect(screen.getByRole('button', { name: /Web Apps/ })).toHaveAttribute('aria-pressed', 'true');
+  expect(items(container)).toHaveLength(4);
 });
 
-test('the heading and every tab live in one bar, so they can be pinned together', () => {
+test('there is no "All" chip, only real categories', () => {
+  renderSection();
+  const chips = within(screen.getByRole('group', { name: 'Filter projects by category' })).getAllByRole('button');
+  expect(chips.map((c) => c.textContent.replace(/\d+$/, ''))).toEqual(['Web App', 'Mobile App', 'Websites', 'Others']);
+});
+
+test('falls back to the first category with projects when Websites is empty', () => {
+  const data = sampleProjects('full');
+  data.projects = data.projects.filter((p) => !p.categoryIds.includes('websites'));
+  renderSection(data);
+  // Web App is empty without its Websites projects too, so the first chip with projects is Mobile App.
+  expect(screen.getByRole('button', { name: /Mobile App/ })).toHaveAttribute('aria-pressed', 'true');
+});
+
+test('the chips filter, and switching Design/Development goes back to the default category', () => {
+  const { container } = renderSection();
+  fireEvent.click(screen.getByRole('button', { name: /Mobile App/ }));
+  expect(items(container)).toHaveLength(3);
+  fireEvent.click(screen.getByRole('button', { name: 'Development' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Design' }));
+  expect(screen.getByRole('button', { name: /Websites/ })).toHaveAttribute('aria-pressed', 'true');
+});
+
+test('the heading and every tab live in one bar, so they are pinned together', () => {
   const { container } = renderSection();
   const bar = container.querySelector('[data-projects-bar]');
   expect(within(bar).getByRole('heading', { name: 'Projects' })).toBeInTheDocument();
@@ -30,40 +57,44 @@ test('the heading and every tab live in one bar, so they can be pinned together'
   expect(within(bar).getByRole('group', { name: 'Filter projects by category' })).toBeInTheDocument();
 });
 
-test('the sticky variant pins the bar; the panel variant keeps it fixed above a scrolling list', () => {
-  const sticky = renderSection({ variant: 'sticky' });
-  const stickyBar = sticky.container.querySelector('[data-projects-bar]');
-  expect(stickyBar).toHaveClass('sticky');
-  expect(sticky.container.querySelector('[data-projects-section] > ul')).not.toHaveClass('overflow-y-auto');
-  sticky.unmount();
+describe('sticky follows the measured height, never the number of projects', () => {
+  const section = (container) => container.querySelector('[data-projects-section]');
 
-  const panel = renderSection({ variant: 'panel' });
-  const section = panel.container.querySelector('[data-projects-section]');
-  expect(section).toHaveAttribute('data-variant', 'panel');
-  expect(section).toHaveClass('flex-col');
-  expect(panel.container.querySelector('[data-projects-bar]')).not.toHaveClass('sticky');
-  expect(section.querySelector(':scope > ul')).toHaveClass('overflow-y-auto');
+  test('content taller than the visible area: the bar sticks', async () => {
+    jest.spyOn(HTMLElement.prototype, 'offsetHeight', 'get').mockReturnValue(5000);
+    const { container } = renderSection();
+    await waitFor(() => expect(section(container)).toHaveAttribute('data-sticky', 'on'));
+    expect(container.querySelector('[data-projects-bar]')).toHaveClass('sticky');
+  });
+
+  test('content that fits: the bar stays in normal flow', async () => {
+    jest.spyOn(HTMLElement.prototype, 'offsetHeight', 'get').mockReturnValue(300);
+    const { container } = renderSection();
+    await waitFor(() => expect(section(container)).toHaveAttribute('data-content-height', '300'));
+    expect(section(container)).toHaveAttribute('data-sticky', 'off');
+    expect(container.querySelector('[data-projects-bar]')).not.toHaveClass('sticky');
+    expect(container.querySelector('[data-projects-bar]')).toHaveClass('relative');
+  });
+
+  test('the same two projects can be sticky or not depending only on height', async () => {
+    const two = { ...sampleProjects('short'), projects: sampleProjects('short').projects.slice(0, 2) };
+    const spy = jest.spyOn(HTMLElement.prototype, 'offsetHeight', 'get').mockReturnValue(4000);
+    const tall = renderSection(two);
+    await waitFor(() => expect(section(tall.container)).toHaveAttribute('data-sticky', 'on'));
+    tall.unmount();
+    spy.mockReturnValue(200);
+    const short = renderSection(two);
+    await waitFor(() => expect(section(short.container)).toHaveAttribute('data-sticky', 'off'));
+  });
 });
 
-test('category chips can be hidden, leaving only the Design / Development tabs', () => {
-  renderSection({ showCategories: false });
-  expect(screen.queryByRole('group', { name: 'Filter projects by category' })).toBeNull();
-  expect(screen.getByRole('group', { name: 'Project type' })).toBeInTheDocument();
-  // Every project of the tab is listed without a category filter.
-  expect(screen.getAllByRole('heading', { level: 3 })).toHaveLength(12);
+test('no nested scrolling: the list has no overflow container of its own', () => {
+  const { container } = renderSection();
+  const list = container.querySelector('[data-projects-section] > ul');
+  expect(list.className).not.toMatch(/overflow-y|overflow-auto|max-h-|h-screen/);
 });
 
 test('cards are visible straight away when the browser cannot observe scrolling', () => {
   const { container } = renderSection();
-  container.querySelectorAll('[data-projects-section] > ul > li').forEach((li) => {
-    expect(li).toHaveClass('opacity-100');
-  });
-});
-
-test('the category chips still filter, and switching Design/Development resets them', () => {
-  renderSection();
-  fireEvent.click(screen.getByRole('button', { name: /Mobile App/ }));
-  expect(screen.getAllByRole('heading', { level: 3 })).toHaveLength(3);
-  fireEvent.click(screen.getByRole('button', { name: 'Development' }));
-  expect(screen.getByRole('button', { name: /^All/ })).toHaveAttribute('aria-pressed', 'true');
+  items(container).forEach((li) => expect(li).toHaveClass('opacity-100'));
 });
