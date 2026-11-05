@@ -9,7 +9,8 @@ const Footer = lazy(() => import("./components/footer"));
 const Contact = lazy(() => import("./components/contact"));
 const IconMarquee = lazy(() => import("./components/skills"));
 
-function App() {
+// `projectsData` replaces the projects (only the temporary review page passes it).
+function App({ projectsData }) {
   const spotlightRef = useRef(null); // Updated directly on mouse move to avoid re-rendering
   const [activeSection, setActiveSection] = useState("");
   const sections = useRef([]);
@@ -361,7 +362,7 @@ function App() {
                 ref={(el) => (sections.current[3] = el)}
                 className="mt-4 scroll-mt-16 lg:scroll-mt-0"
               >
-                <Suspense fallback={null}><ProjectsPage /></Suspense>
+                <Suspense fallback={null}><ProjectsPage data={projectsData} /></Suspense>
               </section>
               <section
                 id="contact"

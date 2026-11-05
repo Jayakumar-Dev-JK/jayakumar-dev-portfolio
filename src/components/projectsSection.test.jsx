@@ -98,3 +98,25 @@ test('cards are visible straight away when the browser cannot observe scrolling'
   const { container } = renderSection();
   items(container).forEach((li) => expect(li).toHaveClass('opacity-100'));
 });
+
+test('when sticky, the bar releases early and the list margin cancels it, so nothing moves', async () => {
+  jest.spyOn(HTMLElement.prototype, 'offsetHeight', 'get').mockReturnValue(5000);
+  const { container } = renderSection();
+  const section = container.querySelector('[data-projects-section]');
+  await waitFor(() => expect(section).toHaveAttribute('data-sticky', 'on'));
+  const bar = container.querySelector('[data-projects-bar]');
+  const list = section.querySelector(':scope > ul');
+  const release = Math.round(Number(section.dataset.availableHeight) * 0.45);
+  expect(release).toBeGreaterThan(100);
+  expect(bar.style.marginBottom).toBe(`${release}px`);
+  expect(list.style.marginTop).toBe(`-${release}px`);
+});
+
+test('when sticky is off there are no release margins at all', async () => {
+  jest.spyOn(HTMLElement.prototype, 'offsetHeight', 'get').mockReturnValue(300);
+  const { container } = renderSection();
+  const section = container.querySelector('[data-projects-section]');
+  await waitFor(() => expect(section).toHaveAttribute('data-content-height', '300'));
+  expect(container.querySelector('[data-projects-bar]').style.marginBottom).toBe('');
+  expect(section.querySelector(':scope > ul').style.marginTop).toBe('');
+});

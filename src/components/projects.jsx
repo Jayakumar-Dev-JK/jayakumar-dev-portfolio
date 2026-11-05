@@ -414,6 +414,12 @@ function ProjectsPage({ data }) {
     setCategory(null);
   };
 
+  // The pinned bar lets go while about half a screen of the list is still below it, so the last cards and the
+  // next section arrive in an ordinary page scroll instead of squeezing against a pinned bar. A sticky element
+  // stays inside its container including its own bottom margin, so a margin on the bar sets the release point;
+  // the list's equal negative top margin cancels it, which leaves the layout exactly where it was.
+  const release = sticky && status === 'ready' && visibleProjects.length > 0 ? Math.round(available * 0.45) : 0;
+
   return (
     <div
       ref={sectionRef}
@@ -431,6 +437,7 @@ function ProjectsPage({ data }) {
         className={`z-20 bg-slate-900 pb-2 transition-[border-color] duration-200 lg:-mx-6 lg:px-6 ${
           sticky ? 'sticky top-[var(--projects-top,0px)]' : 'relative'
         } border-b ${stuck ? 'border-slate-800' : 'border-transparent'}`}
+        style={release ? { marginBottom: release } : undefined}
       >
         <div className="flex items-center justify-between gap-x-3 py-1.5 sm:gap-x-4">
           <div className="min-w-0 flex-1">
@@ -495,7 +502,10 @@ function ProjectsPage({ data }) {
         </p>
       )}
       {/* One column on phones, two on tablets (cards stack), one wide list beside the intro on desktop. */}
-      <ul className="space-y-2 pt-3 md:grid md:grid-cols-2 md:gap-x-4 md:gap-y-2 md:space-y-0 lg:block lg:space-y-2">
+      <ul
+        className="space-y-2 pt-3 md:grid md:grid-cols-2 md:gap-x-4 md:gap-y-2 md:space-y-0 lg:block lg:space-y-2"
+        style={release ? { marginTop: -release } : undefined}
+      >
         {visibleProjects.map((project, index) => (
           <ProjectCard
             key={`${mode}-${activeCategory}-${project.id}`}
