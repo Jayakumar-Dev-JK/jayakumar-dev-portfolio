@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from "react";
 import "./hero.css";
-import headline from "../assets/portfolio/Icy Blue UI_UX Designer Logo.png";
-import phones from "../assets/portfolio/Neon Blue Smartphone UI Mockups.png";
-import desktop from "../assets/portfolio/Neon Blue Dark-Mode Dashboard Mockup.png";
-import portrait from "../assets/portfolio/Confident Indian Man Cutout with Gold Chain.png";
+import headline from "../assets/portfolio/Icy Blue UI_UX Designer Logo.webp";
+import phones from "../assets/portfolio/Neon Blue Smartphone UI Mockups.webp";
+import desktop from "../assets/portfolio/Neon Blue Dark-Mode Dashboard Mockup.webp";
+import portrait from "../assets/portfolio/Confident Indian Man Cutout with Gold Chain.webp";
 import orbitLine from "../assets/portfolio/orbit-line.svg";
 import Metrics from "./metrics";
 
@@ -48,13 +48,13 @@ function Hero() {
         <div className="ph-light" aria-hidden="true" />
 
         <h2 className="ph-headline">
-          <img className="ph-headline__img" src={headline} alt="UI/UX Designer" width="1672" height="941" />
+          <img className="ph-headline__img" src={headline} alt="UI/UX Designer" width="1672" height="941" fetchPriority="high" decoding="async" />
         </h2>
 
         <img className="ph-orbit" src={orbitLine} alt="" aria-hidden="true" width="440" height="160" />
-        <img className="ph-phones" src={phones} alt="" aria-hidden="true" width="1442" height="1091" />
-        <img className="ph-desktop" src={desktop} alt="" aria-hidden="true" width="1619" height="971" />
-        <img className="ph-portrait" src={portrait} alt="Portrait of Jayakumar" width="1263" height="1245" />
+        <img className="ph-phones" src={phones} alt="" aria-hidden="true" width="1442" height="1091" fetchPriority="high" decoding="async" />
+        <img className="ph-desktop" src={desktop} alt="" aria-hidden="true" width="1619" height="971" fetchPriority="high" decoding="async" />
+        <img className="ph-portrait" src={portrait} alt="Portrait of Jayakumar" width="1263" height="1245" fetchPriority="high" decoding="async" />
 
         {NOTES.map(({ key, items, ruleFirst }) => (
           <div key={key} className={`ph-note ph-note--${key}`}>

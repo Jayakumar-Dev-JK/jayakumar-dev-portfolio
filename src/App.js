@@ -1,11 +1,13 @@
-import React, { useEffect, useState, useRef } from "react";
-import About from "./components/about";
-import Experiance from "./components/experiance";
-import ProjectsPage from "./components/projects";
-import Footer from "./components/footer";
-import Contact from "./components/contact";
-import IconMarquee from "./components/skills";
+import React, { useEffect, useState, useRef, lazy, Suspense } from "react";
 import Hero from "./components/hero";
+
+// Below-the-fold sections are split out so the hero (LCP) is not delayed by their code.
+const About = lazy(() => import("./components/about"));
+const Experiance = lazy(() => import("./components/experiance"));
+const ProjectsPage = lazy(() => import("./components/projects"));
+const Footer = lazy(() => import("./components/footer"));
+const Contact = lazy(() => import("./components/contact"));
+const IconMarquee = lazy(() => import("./components/skills"));
 
 function App() {
   const spotlightRef = useRef(null); // Updated directly on mouse move to avoid re-rendering
@@ -318,7 +320,7 @@ function App() {
                 className="mt-4 lg:mt-6"
               >
                 <h1 className=" lg:hidden z-40 text-xl font-bold text-teal-300 lg:pb-4 pb-2 mt-6 ">About</h1>
-                <About />
+                <Suspense fallback={null}><About /></Suspense>
               </section>
               <section
                 id="experience"
@@ -326,7 +328,7 @@ function App() {
                 className="mt-4"
               >
                 <h1 className="z-10 text-xl font-bold text-teal-300 pb-2">Experiance</h1>
-                <Experiance />
+                <Suspense fallback={null}><Experiance /></Suspense>
               </section>
               <section
                 id="skills"
@@ -334,14 +336,14 @@ function App() {
                 className="mt-4"
               >
                 <h1 className="z-40 text-xl font-bold text-teal-300 pb-2">Tech Stack & Skills</h1>
-                <IconMarquee />
+                <Suspense fallback={null}><IconMarquee /></Suspense>
               </section>
               <section
                 id="projects"
                 ref={(el) => (sections.current[3] = el)}
                 className="mt-4 scroll-mt-16 lg:scroll-mt-0"
               >
-                <ProjectsPage />
+                <Suspense fallback={null}><ProjectsPage /></Suspense>
               </section>
               <section
                 id="contact"
@@ -349,8 +351,8 @@ function App() {
                 className="mt-4"
               >
                 <h1 className="z-10 text-xl font-bold text-teal-300 py-2">Contact</h1>
-                <Contact />
-                <Footer />
+                <Suspense fallback={null}><Contact /></Suspense>
+                <Suspense fallback={null}><Footer /></Suspense>
               </section>
             </main>
           </div>
