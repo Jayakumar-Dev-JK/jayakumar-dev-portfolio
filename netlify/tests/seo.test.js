@@ -62,7 +62,7 @@ test('parseProject keeps safe fields and drops unsafe urls', () => {
 });
 
 test('seoTitle appends the site name only when it fits', () => {
-  assert.strictEqual(seo.seoTitle('Laya'), 'Laya | Jayakumar Jayakrishnan');
+  assert.strictEqual(seo.seoTitle('Laya'), 'Laya | Jayakumar');
   const long = 'Nalaiya Thiran Project: ICT Academy-IBM: Plasma Donor Application - Cloud web Application Development';
   const t = seo.seoTitle(long);
   assert.ok(t.length <= 70, t);
@@ -81,7 +81,7 @@ test('seoDescription pads a short description from the full text and clips at 15
 
 test('renderProjectPage replaces head tags, adds JSON-LD and pre-renders content', () => {
   const html = seo.renderProjectPage(SHELL, seo.parseProject(WHY_WEDS));
-  assert.match(html, /<title>Why Weds: Wedding Events Arrangements \| Jayakumar Jayakrishnan<\/title>/);
+  assert.match(html, /<title>Why Weds: Wedding Events Arrangements \| Jayakumar<\/title>/);
   assert.ok(!html.includes('Home description'));
   assert.match(html, /rel="canonical" href="https:\/\/jayakumarwebdev\.netlify\.app\/projects\/why-weds"/);
   assert.match(
@@ -121,7 +121,7 @@ test('renderProjectPage works when the shell has minified tags in a different or
 
 test('renderNotFoundPage sets noindex and drops the canonical', () => {
   const html = seo.renderNotFoundPage(SHELL);
-  assert.match(html, /<title>Page not found \| Jayakumar Jayakrishnan<\/title>/);
+  assert.match(html, /<title>Page not found \| Jayakumar<\/title>/);
   assert.match(html, /name="robots" content="noindex, nofollow"/);
   assert.ok(!html.includes('rel="canonical"'));
 });

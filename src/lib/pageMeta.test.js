@@ -3,7 +3,7 @@ import { seoDescription, seoTitle } from './pageMeta';
 // These cases mirror netlify/tests/seo.test.js: the browser and the server must agree.
 
 test('seoTitle appends the site name only when it fits', () => {
-  expect(seoTitle('Laya')).toBe('Laya | Jayakumar Jayakrishnan');
+  expect(seoTitle('Laya')).toBe('Laya | Jayakumar');
   const long = 'Nalaiya Thiran Project: ICT Academy-IBM: Plasma Donor Application - Cloud web Application Development';
   const title = seoTitle(long);
   expect(title.length).toBeLessThanOrEqual(70);

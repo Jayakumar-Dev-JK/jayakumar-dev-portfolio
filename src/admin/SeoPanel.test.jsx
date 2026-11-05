@@ -28,7 +28,7 @@ const GOOD = {
 test('the search panel previews the Google result and lists what to improve', () => {
   render(<SeoPanel input={input} type="Development" />);
   const preview = screen.getByLabelText('Google result preview');
-  expect(within(preview).getByText('Why Weds | Jayakumar Jayakrishnan')).toBeInTheDocument();
+  expect(within(preview).getByText('Why Weds | Jayakumar')).toBeInTheDocument();
   expect(within(preview).getByText(/jayakumarwebdev\.netlify\.app › projects › why-weds/)).toBeInTheDocument();
   expect(within(preview).getByText(/A web application for planning/)).toBeInTheDocument();
   expect(screen.getByText('Thin page')).toBeInTheDocument();
@@ -42,7 +42,7 @@ test('the search panel previews the Google result and lists what to improve', ()
 });
 
 test('length meters say in words whether the title and description fit', () => {
-  render(<SeoPanel input={input} type="Development" />);
+  render(<SeoPanel input={{ ...input, title: 'Why Weds wedding events planner' }} type="Development" />);
   const [title, description] = screen.getAllByRole('meter');
   expect(title).toHaveAttribute('aria-valuetext', expect.stringMatching(/characters\. Good length\.$/));
   // A 62-character description is under the 70-character target.

@@ -27,7 +27,7 @@ test('shows the project with a single h1, its technologies, and sets the page me
   expect(screen.getByRole('heading', { name: 'Technologies' })).toBeInTheDocument();
   expect(screen.getByText('MongoDB')).toBeInTheDocument();
 
-  expect(document.title).toMatch(/Laya.*Jayakumar Jayakrishnan|Laya/);
+  expect(document.title).toMatch(/Laya/);
   expect(tag('link[rel="canonical"]').getAttribute('href')).toBe('https://jayakumarwebdev.netlify.app/projects/laya');
   expect(tag('meta[name="description"]').getAttribute('content')).toMatch(/e-commerce web application/i);
   const ld = [...document.head.querySelectorAll('script[type="application/ld+json"][data-page-meta]')].map((s) =>

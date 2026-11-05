@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 
 // Page title/description rules. The Netlify functions apply the same rules on the server
 // (netlify/lib/seo.js) so crawlers and the browser agree - keep the two in sync.
-export const SITE_NAME = 'Jayakumar Jayakrishnan';
+export const SITE_NAME = 'Jayakumar';
 export const SITE_URL = 'https://jayakumarwebdev.netlify.app';
 const TITLE_MAX = 70;
 const DESCRIPTION_MAX = 158;

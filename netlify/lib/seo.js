@@ -4,7 +4,7 @@
  * `npm run test:functions`. The browser has its own copy of the title/description rules in
  * src/lib/pageMeta.js - keep the two in sync.
  */
-const SITE_NAME = 'Jayakumar Jayakrishnan';
+const SITE_NAME = 'Jayakumar';
 const DEFAULT_SITE_URL = 'https://jayakumarwebdev.netlify.app';
 const SLUG_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const TITLE_MAX = 70;
@@ -156,7 +156,7 @@ function bodyHtml(project) {
     : '';
   return (
     `<main data-prerendered="project">` +
-    `<p><a href="/">Jayakumar Jayakrishnan</a> / <a href="/#projects">Projects</a></p>` +
+    `<p><a href="/">Jayakumar</a> / <a href="/#projects">Projects</a></p>` +
     `<h1>${escapeHtml(project.title)}</h1>` +
     `<p>${escapeHtml(project.shortDescription)}</p>${image}${paragraphs}${tech}${linkList}</main>`
   );
