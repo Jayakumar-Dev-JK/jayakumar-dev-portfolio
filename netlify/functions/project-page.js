@@ -51,7 +51,22 @@ function createHandler({ fetchImpl = fetch, env = process.env } = {}) {
       // Serve the plain app so the page still works; the app loads the project itself.
       return { statusCode: 200, headers: { 'Content-Type': 'text/html; charset=UTF-8', 'Cache-Control': 'no-store' }, body: shell };
     }
-    if (!project || project.slug !== slug) return notFound();
+    if (!project || project.slug !== slug) {
+      // A project that was renamed keeps working at its old address: send it to the new one.
+      try {
+        const [renamed] = await seo.fetchPublishedProjects({ projectId, previousSlug: slug, fetchImpl });
+        if (renamed && seo.SLUG_PATTERN.test(renamed.slug || '')) {
+          return {
+            statusCode: 301,
+            headers: { Location: `/projects/${renamed.slug}`, 'Cache-Control': 'public, max-age=0, must-revalidate' },
+            body: '',
+          };
+        }
+      } catch (err) {
+        console.error('project-page: redirect lookup failed', err.message);
+      }
+      return notFound();
+    }
 
     return { statusCode: 200, headers: CACHE_HEADERS, body: seo.renderProjectPage(shell, project, siteUrl) };
   };

@@ -1,9 +1,10 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, Navigate, useParams } from 'react-router-dom';
 import { FaArrowLeft, FaExternalLinkAlt } from 'react-icons/fa';
 import { isFirebaseConfigured } from '../lib/firebaseConfig';
 import { fitImageSrcSet, fitImageUrl } from '../lib/images';
 import { SITE_NAME, SITE_URL, seoDescription, seoTitle, usePageMeta } from '../lib/pageMeta';
+import { resolveProject } from '../lib/projectLookup';
 import { STATIC_PORTFOLIO } from '../components/projects';
 import NotFound from './NotFound';
 
@@ -19,10 +20,10 @@ function track(method, ...args) {
 function useProject(slug) {
   const [state, setState] = useState(() =>
     isFirebaseConfigured
-      ? { status: 'loading', project: null, categories: [] }
+      ? { status: 'loading', project: null, redirectTo: null, categories: [] }
       : {
           status: 'ready',
-          project: STATIC_PORTFOLIO.projects.find((p) => p.slug === slug || p.id === slug) || null,
+          ...resolveProject(STATIC_PORTFOLIO.projects, slug),
           categories: STATIC_PORTFOLIO.categories,
         }
   );
@@ -31,21 +32,21 @@ function useProject(slug) {
     if (!isFirebaseConfigured) {
       setState({
         status: 'ready',
-        project: STATIC_PORTFOLIO.projects.find((p) => p.slug === slug || p.id === slug) || null,
+        ...resolveProject(STATIC_PORTFOLIO.projects, slug),
         categories: STATIC_PORTFOLIO.categories,
       });
       return undefined;
     }
     let cancelled = false;
-    setState({ status: 'loading', project: null, categories: [] });
+    setState({ status: 'loading', project: null, redirectTo: null, categories: [] });
     import('../services/publicProjectService')
       .then(({ fetchPublicPortfolio }) => fetchPublicPortfolio())
       .then(({ projects, categories }) => {
-        if (!cancelled) setState({ status: 'ready', project: projects.find((p) => p.slug === slug) || null, categories });
+        if (!cancelled) setState({ status: 'ready', ...resolveProject(projects, slug), categories });
       })
       .catch((err) => {
         console.error('Failed to load project', err);
-        if (!cancelled) setState({ status: 'error', project: null, categories: [] });
+        if (!cancelled) setState({ status: 'error', project: null, redirectTo: null, categories: [] });
       });
     return () => {
       cancelled = true;
@@ -83,7 +84,33 @@ function buildJsonLd(project, canonical, image, description) {
   ];
 }
 
-function ProjectDetails({ project, categories }) {
+const paragraphsOf = (text) =>
+  String(text || '')
+    .split(/\n{2,}/)
+    .map((p) => p.trim())
+    .filter(Boolean);
+
+// One headed section of the case study (problem / process / outcome).
+function CaseStudySection({ heading, text }) {
+  const paragraphs = paragraphsOf(text);
+  if (!paragraphs.length) return null;
+  return (
+    <section className="mt-8">
+      <h2 className="text-lg font-bold text-teal-300">{heading}</h2>
+      <div className="mt-3 space-y-4 leading-relaxed">
+        {paragraphs.map((paragraph) => (
+          <p key={paragraph} className="whitespace-pre-line">
+            {paragraph}
+          </p>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+// `preview` is the admin's "Preview page": it shows exactly what visitors will see, but leaves
+// the page's head tags and the view counter alone and keeps every link on the page.
+export function ProjectDetails({ project, categories, preview = false }) {
   const canonical = `${SITE_URL}/projects/${project.slug || project.id}`;
   const description = seoDescription(project);
   const image = project.thumbnail || `${SITE_URL}/logo512.png`;
@@ -91,16 +118,20 @@ function ProjectDetails({ project, categories }) {
     () => buildJsonLd(project, canonical, image, description),
     [project, canonical, image, description]
   );
-  usePageMeta({ title: seoTitle(project.title), description, image, canonical, jsonLd });
+  usePageMeta({ title: seoTitle(project.title), description, image, canonical, jsonLd, enabled: !preview });
 
   useEffect(() => {
-    track('recordView', project.id);
-  }, [project.id]);
+    if (!preview) track('recordView', project.id);
+  }, [project.id, preview]);
 
   const categoryNames = (project.categoryIds || [])
     .map((id) => categories.find((c) => c.id === id)?.name)
     .filter(Boolean);
-  const paragraphs = (project.fullDescription || '').split(/\n{2,}/).map((p) => p.trim()).filter(Boolean);
+  const paragraphs = paragraphsOf(project.fullDescription);
+  const facts = [
+    project.role && { label: 'Role', value: project.role },
+    project.year && { label: 'Year', value: project.year },
+  ].filter(Boolean);
   const images = project.gallery?.length
     ? project.gallery
     : project.thumbnail
@@ -112,14 +143,21 @@ function ProjectDetails({ project, categories }) {
     <main className={pageShell}>
       <article className="mx-auto max-w-3xl">
         <nav aria-label="Breadcrumb" className="text-sm">
-          <Link
-            to="/"
-            state={{ scrollTo: 'projects' }}
-            className="inline-flex items-center gap-2 font-medium text-slate-300 hover:text-teal-300 focus-visible:outline-none focus-visible:text-teal-300"
-          >
-            <FaArrowLeft className="h-3 w-3" aria-hidden="true" />
-            {SITE_NAME} / Projects
-          </Link>
+          {preview ? (
+            <span className="inline-flex items-center gap-2 font-medium text-slate-300">
+              <FaArrowLeft className="h-3 w-3" aria-hidden="true" />
+              {SITE_NAME} / Projects
+            </span>
+          ) : (
+            <Link
+              to="/"
+              state={{ scrollTo: 'projects' }}
+              className="inline-flex items-center gap-2 font-medium text-slate-300 hover:text-teal-300 focus-visible:outline-none focus-visible:text-teal-300"
+            >
+              <FaArrowLeft className="h-3 w-3" aria-hidden="true" />
+              {SITE_NAME} / Projects
+            </Link>
+          )}
         </nav>
 
         <header className="mt-8">
@@ -130,6 +168,16 @@ function ProjectDetails({ project, categories }) {
             {project.title}
           </h1>
           {project.description && <p className="mt-4 text-lg leading-relaxed">{project.description}</p>}
+          {facts.length > 0 && (
+            <dl className="mt-5 flex flex-wrap gap-x-8 gap-y-2 text-sm">
+              {facts.map(({ label, value }) => (
+                <div key={label}>
+                  <dt className="text-xs font-semibold uppercase tracking-widest text-slate-500">{label}</dt>
+                  <dd className="mt-0.5 font-medium text-slate-200">{value}</dd>
+                </div>
+              ))}
+            </dl>
+          )}
         </header>
 
         {project.videoEmbedUrl && (
@@ -172,6 +220,10 @@ function ProjectDetails({ project, categories }) {
           </section>
         )}
 
+        <CaseStudySection heading="The problem" text={project.problem} />
+        <CaseStudySection heading="Process" text={project.process} />
+        <CaseStudySection heading="Outcome" text={project.outcome} />
+
         {project.tags.length > 0 && (
           <section className="mt-8">
             <h2 className="text-lg font-bold text-teal-300">Technologies</h2>
@@ -198,7 +250,7 @@ function ProjectDetails({ project, categories }) {
                     href={link.url}
                     target="_blank"
                     rel="noreferrer noopener"
-                    onClick={() => track('recordOutboundClick', project.id, link.url)}
+                    onClick={() => !preview && track('recordOutboundClick', project.id, link.url)}
                     className="inline-flex items-center gap-2 rounded-full border border-teal-400/40 bg-teal-400/10 px-4 py-2 text-sm font-medium text-teal-200 hover:text-teal-100 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-teal-300"
                   >
                     {link.label}
@@ -217,7 +269,7 @@ function ProjectDetails({ project, categories }) {
 
 export default function ProjectPage() {
   const { slug } = useParams();
-  const { status, project, categories } = useProject(slug);
+  const { status, project, redirectTo, categories } = useProject(slug);
 
   if (status === 'loading') {
     return (
@@ -237,6 +289,8 @@ export default function ProjectPage() {
       </main>
     );
   }
+  // A project that was renamed: its old address leads to the current one.
+  if (redirectTo) return <Navigate to={redirectTo} replace />;
   if (!project) return <NotFound />;
   return <ProjectDetails project={project} categories={categories} />;
 }

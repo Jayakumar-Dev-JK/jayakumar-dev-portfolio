@@ -35,6 +35,8 @@ import {
 import { ProjectCard } from '../components/projects';
 import PostViewer from '../components/postViewer';
 import { cardImageUrl, fitImageUrl } from '../lib/images';
+import { SITE_URL } from '../lib/pageMeta';
+import { PagePreview, SeoBadge, SeoPanel } from './SeoPanel';
 import {
   FaCode,
   FaEllipsisV,
@@ -141,7 +143,8 @@ const monogram = (title) =>
     .join('');
 
 // Where "View" opens: the post popup for posts, else the project's own link.
-const publicUrl = (p) => (p.display === 'gallery' ? `/#post=${p.slug}` : p.projectUrl || null);
+// Every project has its own page; the card on the homepage and any shared link lead to it.
+const publicUrl = (p) => (p.slug ? `/projects/${p.slug}` : null);
 
 // Cover image, or a type-colored monogram when there is none.
 function ProjectThumb({ project, className = '' }) {
@@ -411,6 +414,11 @@ export function ProjectsList() {
             Projects
           </h1>
           <p className="text-admin-muted">Create, publish and organise the projects shown on your portfolio.</p>
+          <p className="text-xs text-admin-muted">
+            Each published project gets its own page and is added to the{' '}
+            <a href="/sitemap.xml" target="_blank" rel="noreferrer noopener" className="underline">sitemap<span className="sr-only"> (opens in a new tab)</span></a>{' '}
+            automatically. Google picks new pages up on its own schedule.
+          </p>
         </div>
         <div className="flex flex-wrap gap-2">
           {data.status === 'ready' && sampleMissing && (
@@ -563,6 +571,12 @@ export function ProjectsList() {
                     {p.type} · {categoryNames(p)}
                   </span>
                 </p>
+                {!p.deletedAt && p.status !== 'archived' && (
+                  <p className="flex items-center gap-2 text-xs text-admin-muted">
+                    <span>Search</span>
+                    <SeoBadge project={p} />
+                  </p>
+                )}
                 <div className="mt-auto flex items-center justify-between gap-2 border-t border-admin-subtle pt-3">
                   <span className="text-xs text-admin-muted" title={formatDate(p.updatedAt)}>Updated {shortDate(p.updatedAt)}</span>
                   {renderActions(p)}
@@ -583,6 +597,7 @@ export function ProjectsList() {
                 <th scope="col" className="px-3 py-2.5 font-semibold">Type</th>
                 <th scope="col" className="px-3 py-2.5 font-semibold">Category</th>
                 <th scope="col" className="px-3 py-2.5 font-semibold">Status</th>
+                <th scope="col" className="px-3 py-2.5 font-semibold">Search</th>
                 <th scope="col" className="px-3 py-2.5 font-semibold"><span className="sr-only">Featured</span></th>
                 <th scope="col" className="px-3 py-2.5 font-semibold">Updated</th>
                 <th scope="col" className="px-4 py-2.5 text-right font-semibold">Actions</th>
@@ -605,6 +620,7 @@ export function ProjectsList() {
                   <td className="px-3 py-3">{p.type}</td>
                   <td className="max-w-[10rem] truncate px-3 py-3">{categoryNames(p)}</td>
                   <td className="px-3 py-3"><StatusBadge project={p} /></td>
+                  <td className="px-3 py-3">{!p.deletedAt && p.status !== 'archived' ? <SeoBadge project={p} /> : null}</td>
                   <td className="px-3 py-3"><FeaturedStar featured={p.featured} /></td>
                   <td className="whitespace-nowrap px-3 py-3 text-admin-muted" title={formatDate(p.updatedAt)}>{shortDate(p.updatedAt)}</td>
                   <td className="px-4 py-3">{renderActions(p)}</td>
@@ -646,6 +662,11 @@ const EMPTY_FORM = {
   sortOrder: 0,
   display: 'link',
   gallery: [],
+  role: '',
+  year: '',
+  problem: '',
+  process: '',
+  outcome: '',
 };
 
 function toForm(project) {
@@ -666,6 +687,11 @@ function toForm(project) {
     sortOrder: project.sortOrder ?? 0,
     display: project.display || 'link',
     gallery: project.gallery || [],
+    role: project.role || '',
+    year: project.year || '',
+    problem: project.problem || '',
+    process: project.process || '',
+    outcome: project.outcome || '',
   };
 }
 
@@ -686,6 +712,11 @@ function toInput(form) {
     sortOrder: Number(form.sortOrder),
     display: form.display,
     gallery: form.gallery,
+    role: form.role,
+    year: form.year,
+    problem: form.problem,
+    process: form.process,
+    outcome: form.outcome,
   };
 }
 
@@ -705,6 +736,7 @@ export function ProjectEditor() {
   const [notice, setNotice] = useState(null);
   const [saving, setSaving] = useState(false);
   const [previewOpen, setPreviewOpen] = useState(false);
+  const [pagePreviewOpen, setPagePreviewOpen] = useState(false);
 
   const load = useCallback(async () => {
     setLoadState('loading');
@@ -850,6 +882,12 @@ export function ProjectEditor() {
   const isPublished = stored?.status === 'published';
   const preview = {
     id: 'preview',
+    slug: form.slug,
+    role: form.role.trim(),
+    year: form.year.trim(),
+    problem: form.problem.trim(),
+    process: form.process.trim(),
+    outcome: form.outcome.trim(),
     type: form.type,
     title: form.title || 'Project title',
     description: form.shortDescription || 'Short description',
@@ -867,6 +905,13 @@ export function ProjectEditor() {
   };
   const errorProps = (key) =>
     errors[key] ? { 'aria-invalid': true, 'aria-describedby': `${key}-error` } : {};
+  const pageAddress = `${SITE_URL}/projects/${form.slug || 'your-project'}`;
+  // A live project's address is what Google and any shared link point to.
+  const slugChangesLiveAddress =
+    Boolean(stored?.slug) &&
+    Boolean(form.slug) &&
+    form.slug !== stored.slug &&
+    (stored.status === 'published' || Boolean(stored.publishedAt));
 
   return (
     <section aria-labelledby="editor-heading">
@@ -876,6 +921,11 @@ export function ProjectEditor() {
         </h1>
         {stored && <StatusBadge project={stored} />}
         {dirty && <span className="text-xs text-admin-muted">Unsaved changes</span>}
+        {isPublished && stored?.slug && (
+          <a href={`/projects/${stored.slug}`} target="_blank" rel="noreferrer noopener" className="text-sm font-medium text-admin-accent hover:underline">
+            View live page ↗<span className="sr-only"> (opens in a new tab)</span>
+          </a>
+        )}
       </div>
 
       {notice && (
@@ -901,7 +951,7 @@ export function ProjectEditor() {
           <Field id="title" label="Title" required error={errors.title}>
             <input id="title" className={inputClass} value={form.title} onChange={(e) => onTitle(e.target.value)} {...errorProps('title')} />
           </Field>
-          <Field id="slug" label="Slug" required hint="Short name for the project's link, e.g. deskmate. Lowercase letters, numbers and hyphens." error={errors.slug}>
+          <Field id="slug" label="Slug (page address)" required hint={`This project's page: ${pageAddress}. Lowercase letters, numbers and hyphens.`} error={errors.slug}>
             <input
               id="slug"
               className={inputClass}
@@ -914,6 +964,13 @@ export function ProjectEditor() {
               {...errorProps('slug')}
             />
           </Field>
+          {slugChangesLiveAddress && (
+            <Banner tone="warn" className="">
+              This project is live at <strong>/projects/{stored.slug}</strong>. Saving a new slug moves the page to{' '}
+              <strong>/projects/{form.slug}</strong>. The old address keeps working: visitors and Google are redirected
+              to the new one.
+            </Banner>
+          )}
 
           <fieldset>
             <legend className="mb-1 text-sm font-medium text-slate-200">
@@ -958,14 +1015,14 @@ export function ProjectEditor() {
               value={form.display}
               onChange={(value) => update('display', value)}
               options={[
-                { value: 'link', label: 'Open link' },
+                { value: 'link', label: 'Open project page' },
                 { value: 'gallery', label: 'Show post popup' },
               ]}
             />
             <p className="mt-1 text-xs text-admin-muted">
               {form.display === 'gallery'
-                ? 'Opens an Instagram-style popup with the images below. Good for posters and banners.'
-                : 'Opens the primary link in a new tab. Without a link, the card is not clickable.'}
+                ? 'Opens an Instagram-style popup with the images below, with a link to the full page. The project still has its own page. Good for posters and banners.'
+                : "Opens the project's own page, which shows the description, images and your links."}
             </p>
           </div>
 
@@ -1009,14 +1066,43 @@ export function ProjectEditor() {
             </fieldset>
           )}
 
-          <Field id="shortDescription" label="Short description" required hint="Shown on the project card (2 lines)." error={errors.shortDescription}>
+          <Field id="shortDescription" label="Short description" required hint="Shown on the project card and used as the description in Google. Aim for 70-160 characters." error={errors.shortDescription}>
             <textarea id="shortDescription" rows={2} className={inputClass} value={form.shortDescription}
               onChange={(e) => update('shortDescription', e.target.value)} {...errorProps('shortDescription')} />
           </Field>
-          <Field id="description" label="Full description / case study" error={errors.description}>
+          <Field id="description" label="Description" hint="Shown on the project page. Leave a blank line between paragraphs." error={errors.description}>
             <textarea id="description" rows={6} className={inputClass} value={form.description}
               onChange={(e) => update('description', e.target.value)} {...errorProps('description')} />
           </Field>
+
+          <fieldset className="space-y-4 rounded-lg border border-slate-700/70 p-4">
+            <legend className="px-1 text-sm font-medium text-slate-200">Case study details (optional)</legend>
+            <p className="text-xs text-admin-muted">
+              Real written content is what helps a project page rank. Each filled-in section appears on the page under its own heading.
+            </p>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Field id="role" label="Your role" hint="e.g. UI/UX designer and frontend developer" error={errors.role}>
+                <input id="role" className={inputClass} value={form.role} maxLength={80}
+                  onChange={(e) => update('role', e.target.value)} {...errorProps('role')} />
+              </Field>
+              <Field id="year" label="Year" hint="e.g. 2024 or 2023-2024" error={errors.year}>
+                <input id="year" className={inputClass} value={form.year} maxLength={20}
+                  onChange={(e) => update('year', e.target.value)} {...errorProps('year')} />
+              </Field>
+            </div>
+            <Field id="problem" label="The problem" hint="Who had what problem, and why it mattered." error={errors.problem}>
+              <textarea id="problem" rows={4} className={inputClass} value={form.problem}
+                onChange={(e) => update('problem', e.target.value)} {...errorProps('problem')} />
+            </Field>
+            <Field id="process" label="Process" hint="Research, wireframes, key decisions, how it was built." error={errors.process}>
+              <textarea id="process" rows={4} className={inputClass} value={form.process}
+                onChange={(e) => update('process', e.target.value)} {...errorProps('process')} />
+            </Field>
+            <Field id="outcome" label="Outcome" hint="What changed: results, numbers, feedback." error={errors.outcome}>
+              <textarea id="outcome" rows={4} className={inputClass} value={form.outcome}
+                onChange={(e) => update('outcome', e.target.value)} {...errorProps('outcome')} />
+            </Field>
+          </fieldset>
           <Field id="techStack" label="Tools / tech stack" hint="Comma-separated, e.g. Figma, UI Design, Prototyping." error={errors.techStack}>
             <input id="techStack" className={inputClass} value={form.techStackText}
               onChange={(e) => update('techStackText', e.target.value)} {...errorProps('techStack')} />
@@ -1063,7 +1149,7 @@ export function ProjectEditor() {
             </div>
           )}
 
-          <Field id="projectUrl" label="Primary link" hint="Where the card opens: live site, Figma, Behance, case study… https:// only." error={errors.projectUrl}>
+          <Field id="projectUrl" label="Primary link" hint="Shown as the 'View project' button on the project page: live site, Figma, Behance… https:// only." error={errors.projectUrl}>
             <input id="projectUrl" type="url" className={inputClass} value={form.projectUrl}
               onChange={(e) => update('projectUrl', e.target.value)} {...errorProps('projectUrl')} />
           </Field>
@@ -1125,20 +1211,31 @@ export function ProjectEditor() {
             </button>
           </div>
           {isPublished && (
-            <p className="text-xs text-admin-muted">This project is live. Saved changes appear on the public portfolio immediately.</p>
+            <p className="text-xs text-admin-muted">
+              This project is live. Saved changes appear on the portfolio immediately. Its page refreshes for search engines within about 5 minutes.
+            </p>
           )}
         </div>
 
         <aside className="lg:col-span-2">
           <h2 className="mb-2 text-sm font-medium text-slate-200">Preview</h2>
-          <p className="mb-3 text-xs text-admin-muted">How the card will look on the portfolio. Only visible to you.</p>
+          <p className="mb-3 text-xs text-admin-muted">How the card will look on the portfolio. Only visible to you. Use "Preview page" to see the project's own page, including unsaved changes.</p>
           <ul className="rounded-lg border border-slate-700/70 lg:sticky lg:top-6">
             <ProjectCard project={preview} onOpen={() => setPreviewOpen(true)} />
           </ul>
-          {form.display === 'gallery' && (
-            <button type="button" className={`${smallButtonClass.secondary} mt-3`} onClick={() => setPreviewOpen(true)}>
-              Preview popup
+          <div className="mt-3 flex flex-wrap gap-2">
+            <button type="button" className={smallButtonClass.secondary} onClick={() => setPagePreviewOpen(true)}>
+              Preview page
             </button>
+            {form.display === 'gallery' && (
+              <button type="button" className={smallButtonClass.secondary} onClick={() => setPreviewOpen(true)}>
+                Preview popup
+              </button>
+            )}
+          </div>
+          <SeoPanel input={toInput(form)} type={form.type} />
+          {pagePreviewOpen && (
+            <PagePreview project={preview} categories={categories} onClose={() => setPagePreviewOpen(false)} />
           )}
           {previewOpen && (
             <PostViewer

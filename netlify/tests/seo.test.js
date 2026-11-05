@@ -199,3 +199,68 @@ test('sitemap handler returns XML with published projects, and a homepage-only s
   assert.strictEqual(failed.statusCode, 200);
   assert.ok(!failed.body.includes('/projects/'));
 });
+
+const CASE_STUDY = doc({
+  slug: str('deskmate'),
+  title: str('Deskmate'),
+  type: str('Design'),
+  shortDescription: str('Office seat booking.'),
+  role: str('UI/UX designer'),
+  year: str('2024'),
+  problem: str('Seats were double-booked.'),
+  process: str('Wireframes first.\n\nThen a prototype.'),
+  outcome: str('Booking time fell sharply.'),
+});
+
+test('case-study sections, role and year are pre-rendered for crawlers', () => {
+  const html = seo.renderProjectPage(SHELL, seo.parseProject(CASE_STUDY));
+  assert.match(html, /<p>Role: UI\/UX designer · Year: 2024<\/p>/);
+  assert.match(html, /<h2>The problem<\/h2><p>Seats were double-booked\.<\/p>/);
+  assert.match(html, /<h2>Process<\/h2><p>Wireframes first\.<\/p><p>Then a prototype\.<\/p>/);
+  assert.match(html, /<h2>Outcome<\/h2><p>Booking time fell sharply\.<\/p>/);
+});
+
+test('a short description is topped up from the problem when there is no description', () => {
+  const d = seo.seoDescription(seo.parseProject(CASE_STUDY));
+  assert.ok(d.startsWith('Office seat booking.'));
+  assert.ok(d.includes('Seats were double-booked'));
+});
+
+test('pages without case-study text have no empty headings', () => {
+  const html = seo.renderProjectPage(SHELL, seo.parseProject(WHY_WEDS));
+  assert.ok(!html.includes('The problem'));
+  assert.ok(!html.includes('Role:'));
+});
+
+test('project-page redirects a renamed project from its old address with a 301', async () => {
+  const calls = [];
+  const fetchImpl = async (url, init) => {
+    calls.push({ url, init });
+    if (String(url).endsWith('/index.html')) return { ok: true, status: 200, text: async () => SHELL };
+    const body = JSON.parse(init.body);
+    const filters = body.structuredQuery.where.compositeFilter.filters;
+    const bySlug = filters.some((f) => f.fieldFilter.field.fieldPath === 'slug');
+    // The current-slug lookup finds nothing; the old-slug lookup finds the renamed project.
+    return { ok: true, status: 200, json: async () => (bySlug ? [{}] : [{ document: WHY_WEDS }]) };
+  };
+  const res = await createPageHandler({ fetchImpl, env: ENV })(event('old-why-weds'));
+  assert.strictEqual(res.statusCode, 301);
+  assert.strictEqual(res.headers.Location, '/projects/why-weds');
+  const lookup = JSON.parse(calls[calls.length - 1].init.body).structuredQuery.where.compositeFilter.filters;
+  assert.deepStrictEqual(
+    lookup.map((f) => [f.fieldFilter.field.fieldPath, f.fieldFilter.op, f.fieldFilter.value.stringValue]),
+    [
+      ['status', 'EQUAL', 'published'],
+      ['previousSlugs', 'ARRAY_CONTAINS', 'old-why-weds'],
+    ]
+  );
+});
+
+test('an address that nobody used is still a 404, not a redirect', async () => {
+  const fetchImpl = async (url) =>
+    String(url).endsWith('/index.html')
+      ? { ok: true, status: 200, text: async () => SHELL }
+      : { ok: true, status: 200, json: async () => [{}] };
+  const res = await createPageHandler({ fetchImpl, env: ENV })(event('never-existed'));
+  assert.strictEqual(res.statusCode, 404);
+});

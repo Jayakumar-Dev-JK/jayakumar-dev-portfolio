@@ -188,6 +188,27 @@ URL is rebuilt from them, so no other site can be embedded.
   plan allows 50,000 reads a day, which is plenty for a portfolio. Move to daily
   totals if traffic grows.
 
+### Project pages, case studies and search
+
+Every published project has its own page at `/projects/<slug>`:
+
+- **Server-rendered tags.** The `project-page` Netlify function fills in the title, description,
+  canonical link, social tags, structured data and text, so search engines and link previews
+  don't depend on JavaScript. `sitemap.xml` is built live by the `sitemap` function. Publishing,
+  unpublishing or editing a project needs no redeploy; the CDN refreshes a page within about 5 minutes.
+- **Case-study fields** (all optional): role, year, the problem, process and outcome. They are
+  shown on the page under their own headings.
+- **Slug history.** Renaming a published project keeps its old slug in `previousSlugs`; the old
+  address redirects (HTTP 301) to the new one, and the old slug can't be reused by another project.
+- **Search panel.** The editor shows a Google-style preview and a checklist (advice only, never
+  blocks saving), and the project list shows a "Search" badge. "Preview page" shows the page from
+  the editor's current, unsaved values.
+
+**Deploy the rules after this change.** The new fields are allowed by `firestore.rules`, so run
+`npm run deploy:rules` (or paste the file into the Firebase console). Until then, saving still works
+for any project that doesn't use the new fields, but a project with a role/year/case-study text, or
+a renamed published project, is rejected by the old rules.
+
 ## 6. Uploads (Cloudinary, signed)
 
 Files go to Cloudinary. Firestore keeps metadata only, in the `media` collection.

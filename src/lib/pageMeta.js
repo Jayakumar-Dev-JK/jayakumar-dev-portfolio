@@ -22,9 +22,10 @@ export function seoTitle(title) {
   return full.length <= TITLE_MAX ? full : clip(title, TITLE_MAX);
 }
 
-export function seoDescription({ title, type, description, fullDescription }) {
+export function seoDescription({ title, type, description, fullDescription, problem, outcome }) {
   let text = collapse(description);
-  if (text.length < 110 && fullDescription) text = `${text} ${collapse(fullDescription)}`.trim();
+  const extra = fullDescription || problem || outcome;
+  if (text.length < 110 && extra) text = `${text} ${collapse(extra)}`.trim();
   if (!text) text = `${title} - a ${String(type || 'web').toLowerCase()} project by ${SITE_NAME}.`;
   return clip(text, DESCRIPTION_MAX);
 }
@@ -53,9 +54,10 @@ const metaTag = (attr, name) => () => {
 };
 
 // Sets the document title and the SEO/social tags for the current page while it is mounted.
-export function usePageMeta({ title, description, image, canonical, noindex = false, jsonLd = [] }) {
+export function usePageMeta({ title, description, image, canonical, noindex = false, jsonLd = [], enabled = true }) {
   const jsonKey = JSON.stringify(jsonLd);
   useEffect(() => {
+    if (!enabled) return undefined; // e.g. the admin preview must not touch the admin's own head tags
     const restores = [];
     const previousTitle = document.title;
     if (title) {
@@ -109,5 +111,5 @@ export function usePageMeta({ title, description, image, canonical, noindex = fa
       restores.push(() => script.remove());
     });
     return () => restores.reverse().forEach((restore) => restore());
-  }, [title, description, image, canonical, noindex, jsonKey]);
+  }, [title, description, image, canonical, noindex, jsonKey, enabled]);
 }
