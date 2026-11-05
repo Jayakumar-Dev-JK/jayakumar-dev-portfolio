@@ -1,12 +1,12 @@
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import ProjectsPage from './projects';
-import { sampleProjects } from '../data/sampleProjects';
+import { fixtureProjects } from './projectsSection.fixture';
 
 // jsdom has no layout, so heights are supplied by mocking offsetHeight; the real scrolling is checked in a
 // browser. These cover the structure, the default category and the measurement-based sticky decision.
 
-const renderSection = (data = sampleProjects('full')) =>
+const renderSection = (data = fixtureProjects('full')) =>
   render(
     <MemoryRouter>
       <ProjectsPage data={data} />
@@ -33,7 +33,7 @@ test('there is no "All" chip, only real categories', () => {
 });
 
 test('falls back to the first category with projects when Websites is empty', () => {
-  const data = sampleProjects('full');
+  const data = fixtureProjects('full');
   data.projects = data.projects.filter((p) => !p.categoryIds.includes('websites'));
   renderSection(data);
   // Web App is empty without its Websites projects too, so the first chip with projects is Mobile App.
@@ -77,7 +77,7 @@ describe('sticky follows the measured height, never the number of projects', () 
   });
 
   test('the same two projects can be sticky or not depending only on height', async () => {
-    const two = { ...sampleProjects('short'), projects: sampleProjects('short').projects.slice(0, 2) };
+    const two = { ...fixtureProjects('short'), projects: fixtureProjects('short').projects.slice(0, 2) };
     const spy = jest.spyOn(HTMLElement.prototype, 'offsetHeight', 'get').mockReturnValue(4000);
     const tall = renderSection(two);
     await waitFor(() => expect(section(tall.container)).toHaveAttribute('data-sticky', 'on'));

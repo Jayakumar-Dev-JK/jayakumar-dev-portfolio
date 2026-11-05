@@ -314,7 +314,7 @@ function defaultCategory(projects, chips) {
   return (chips.find((c) => c.id === 'websites' && filled(c.id)) || chips.find((c) => filled(c.id)) || chips[0])?.id ?? null;
 }
 
-// `data` replaces the Firestore data (used by the review page and tests).
+// `data` replaces the Firestore data (used by the tests).
 function ProjectsPage({ data }) {
   const [mode, setMode] = useState('design');
   const [category, setCategory] = useState(null); // null = this tab's default category
