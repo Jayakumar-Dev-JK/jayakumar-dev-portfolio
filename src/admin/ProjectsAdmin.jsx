@@ -728,6 +728,8 @@ export function ProjectEditor() {
   const [saving, setSaving] = useState(false);
   const [previewOpen, setPreviewOpen] = useState(false);
   const [pagePreviewOpen, setPagePreviewOpen] = useState(false);
+  const [confirm, confirmDialog] = useConfirm();
+  const [unpublishing, setUnpublishing] = useState(false);
 
   const load = useCallback(async () => {
     setLoadState('loading');
@@ -864,6 +866,33 @@ export function ProjectEditor() {
   });
   const cancel = () => leave('/admin');
 
+  // Takes the project off the portfolio (it becomes a draft), same as "Unpublish" in the project list.
+  // The form is left alone, so anything typed but not yet saved is not lost; only the stored copy is refreshed
+  // (its save-time stamp changed, and an old one would make the next save look like a conflict).
+  const unpublish = async () => {
+    if (!stored) return;
+    const ok = await confirm({
+      title: `Unpublish "${stored.title}"?`,
+      description: `It disappears from the public portfolio. You can publish it again at any time.${
+        dirty ? ' Your unsaved changes stay in the form.' : ''
+      }`,
+      confirmLabel: 'Unpublish',
+      tone: 'warn',
+    });
+    if (!ok) return;
+    setUnpublishing(true);
+    setNotice(null);
+    try {
+      await unpublishProject(id, user.uid);
+      setStored(await getProject(id));
+      setNotice({ tone: 'success', text: `"${stored.title}" is now a draft.` });
+    } catch (err) {
+      setNotice({ tone: 'error', text: errorMessage(err) });
+    } finally {
+      setUnpublishing(false);
+    }
+  };
+
   if (loadState === 'loading') return <p role="status">Loading…</p>;
   if (loadState === 'missing') {
     return (
@@ -914,6 +943,7 @@ export function ProjectEditor() {
 
   return (
     <section aria-labelledby="editor-heading">
+      {confirmDialog}
       <Link
         to="/admin"
         onClick={guardClick('/admin')}
@@ -927,18 +957,6 @@ export function ProjectEditor() {
           {isNew ? 'New project' : 'Edit project'}
         </h1>
         {stored && <StatusBadge project={stored} />}
-        {isPublished && stored?.slug && (
-          <a
-            href={`/projects/${stored.slug}`}
-            target="_blank"
-            rel="noreferrer noopener"
-            className="inline-flex min-h-6 items-center gap-1.5 rounded text-sm font-medium text-admin-accent hover:underline focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-admin-accent max-md:min-h-11"
-          >
-            View live page
-            <Icon as={FaExternalLinkAlt} size={11} />
-            <span className="sr-only"> (opens in a new tab)</span>
-          </a>
-        )}
       </div>
 
       {notice && (
@@ -1183,7 +1201,7 @@ export function ProjectEditor() {
           </div>
 
           <div className="sticky bottom-0 z-20 -mx-4 flex flex-wrap items-center gap-2 border-t border-admin-subtle bg-admin-app px-4 py-3 md:mx-0 md:px-0">
-            <button type="submit" className={buttonClass.secondary} disabled={saving}>
+            <button type="submit" className={buttonClass.secondary} disabled={saving || unpublishing}>
               {saving ? 'Saving…' : isPublished ? 'Save changes' : 'Save draft'}
             </button>
             {!isPublished && !stored?.deletedAt && (
@@ -1191,7 +1209,12 @@ export function ProjectEditor() {
                 Save &amp; publish
               </button>
             )}
-            <button type="button" className={buttonClass.secondary} onClick={cancel} disabled={saving}>
+            {isPublished && (
+              <button type="button" className={buttonClass.secondary} onClick={unpublish} disabled={saving || unpublishing}>
+                {unpublishing ? 'Unpublishing…' : 'Unpublish'}
+              </button>
+            )}
+            <button type="button" className={buttonClass.secondary} onClick={cancel} disabled={saving || unpublishing}>
               Cancel
             </button>
             <p role="status" className="ml-auto flex items-center gap-2 text-xs text-admin-muted">
@@ -1219,6 +1242,18 @@ export function ProjectEditor() {
             <button type="button" className={smallButtonClass.secondary} onClick={() => setPagePreviewOpen(true)}>
               Preview page
             </button>
+            {isPublished && stored?.slug && (
+              <a
+                href={`/projects/${stored.slug}`}
+                target="_blank"
+                rel="noreferrer noopener"
+                className={smallButtonClass.secondary}
+              >
+                View live page
+                <Icon as={FaExternalLinkAlt} size={10} />
+                <span className="sr-only"> (opens in a new tab)</span>
+              </a>
+            )}
             {form.display === 'gallery' && (
               <button type="button" className={smallButtonClass.secondary} onClick={() => setPreviewOpen(true)}>
                 Preview popup

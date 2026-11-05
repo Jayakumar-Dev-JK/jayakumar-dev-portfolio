@@ -50,13 +50,13 @@ test('length meters say in words whether the title and description fit', () => {
   expect(description).toHaveAttribute('aria-valuemax', '158');
 });
 
-test('the device switch narrows the preview to a phone-width result', () => {
+test('there is one Google preview and no desktop/mobile switch', () => {
   render(<SeoPanel input={input} type="Development" />);
-  const preview = screen.getByLabelText('Google result preview');
-  expect(preview).not.toHaveClass('max-w-[360px]');
-  fireEvent.click(screen.getByRole('radio', { name: 'Mobile' }));
-  expect(screen.getByRole('radio', { name: 'Mobile' })).toBeChecked();
-  expect(preview).toHaveClass('max-w-[360px]');
+  expect(screen.getAllByLabelText('Google result preview')).toHaveLength(1);
+  expect(screen.queryByRole('radio')).toBeNull();
+  expect(screen.queryByRole('radiogroup')).toBeNull();
+  expect(screen.queryByText('Mobile')).toBeNull();
+  expect(screen.queryByText('Desktop')).toBeNull();
 });
 
 test('"Fix" moves focus to the field that needs work', () => {
