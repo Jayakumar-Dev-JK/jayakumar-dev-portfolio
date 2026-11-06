@@ -6,6 +6,7 @@ import { parseTags } from '../lib/validation';
 import { cardImageSrcSet, cardImageUrl, fitImageUrl } from '../lib/images';
 import { DEFAULT_CATEGORIES, LEGACY_PROJECTS } from '../data/legacyProjects';
 import PostViewer, { buildSlides } from './postViewer';
+import { releaseDistance } from '../lib/projectsRelease';
 
 const MODES = [
   { id: 'design', type: 'Design', label: 'Design', Icon: FaPalette, subtitle: 'Selected UI/UX design work.' },
@@ -419,7 +420,8 @@ function ProjectsPage({ data }) {
   // next section arrive in an ordinary page scroll instead of squeezing against a pinned bar. A sticky element
   // stays inside its container including its own bottom margin, so a margin on the bar sets the release point;
   // the list's equal negative top margin cancels it, which leaves the layout exactly where it was.
-  const release = sticky && status === 'ready' && visibleProjects.length > 0 ? Math.round(available * 0.45) : 0;
+  const release =
+    sticky && status === 'ready' && visibleProjects.length > 0 ? releaseDistance(available + stickyTop, stickyTop, barHeight) : 0;
 
   return (
     <div
@@ -432,11 +434,13 @@ function ProjectsPage({ data }) {
       style={{ '--projects-top': `${stickyTop}px`, scrollMarginTop: stickyTop }}
     >
       <div ref={sentinelRef} aria-hidden="true" className="-mb-px h-px" />
+      {/* No background on purpose (the owner asked for none): while pinned, cards scroll under the bar and show through it. */}
       <div
         ref={barRef}
         data-projects-bar=""
-        className={`z-20 pb-1.5 transition-[border-color] sm:pb-2 duration-200 lg:-mx-6 lg:px-6 ${sticky ? 'sticky top-[var(--projects-top,0px)]' : 'relative'
-          } border-b ${stuck ? 'border-slate-800' : 'border-transparent'}`}
+        className={`z-20 pb-1.5 transition-[border-color] duration-200 sm:pb-2 lg:-mx-6 lg:px-6 ${
+          sticky ? 'sticky top-[var(--projects-top,0px)]' : 'relative'
+        } border-b ${stuck ? 'border-slate-800' : 'border-transparent'}`}
         style={release ? { marginBottom: release } : undefined}
       >
         <div className="flex items-center justify-between gap-x-3 py-1.5 sm:gap-x-4">
@@ -499,9 +503,22 @@ function ProjectsPage({ data }) {
         </p>
       )}
       {/* One column on phones, two on tablets (cards stack), one wide list beside the intro on desktop. */}
+      {/* While the bar is pinned, the top of the list is clipped along the bar's bottom edge, so cards never draw
+          under the (background-less) bar. Pure CSS: a scroll-linked animation in index.css, driven by these
+          numbers. The page scrolls exactly as before; browsers without scroll-linked animations just skip it. */}
       <ul
-        className="space-y-2 pt-3 md:grid md:grid-cols-2 md:gap-x-4 md:gap-y-2 md:space-y-0 lg:block lg:space-y-2"
-        style={release ? { marginTop: -release } : undefined}
+        data-projects-cards=""
+        className={`space-y-2 pt-3 md:grid md:grid-cols-2 md:gap-x-4 md:gap-y-2 md:space-y-0 lg:block lg:space-y-2 ${sticky ? 'projects-clip' : ''}`}
+        style={{
+          ...(release ? { marginTop: -release } : null),
+          ...(sticky
+            ? {
+                '--clip-start': `${Math.max(0, available - barHeight)}px`,
+                '--clip-end': `${stickyTop + barHeight + release}px`,
+                '--clip-release': `${release}px`,
+              }
+            : null),
+        }}
       >
         {visibleProjects.map((project, index) => (
           <ProjectCard

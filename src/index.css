@@ -25,3 +25,28 @@ code {
   width: 0;
   height: 0;
 }
+
+/* Projects list: hide the part of the list that has scrolled up into the pinned bar's area (the bar has no
+   background). The top inset of the clip grows 1px per px scrolled, from the moment the list's top reaches the
+   bar's bottom edge (--clip-start) until only the last --clip-release px remain (--clip-end), which is where
+   the bar lets go. Nothing here listens to scrolling or changes how the page scrolls. */
+@keyframes projects-clip {
+  from {
+    clip-path: inset(0 -100vw -100vw -100vw);
+  }
+  to {
+    clip-path: inset(calc(100% - var(--clip-release, 0px)) -100vw -100vw -100vw);
+  }
+}
+
+@supports (animation-timeline: view()) {
+  .projects-clip {
+    /* Longhands only: the build tool may reorder declarations, and the `animation` shorthand would reset the timeline. */
+    animation-name: projects-clip;
+    animation-timing-function: linear;
+    animation-fill-mode: both;
+    animation-duration: auto;
+    animation-timeline: view();
+    animation-range: cover var(--clip-start, 0px) cover calc(100% - var(--clip-end, 0px));
+  }
+}

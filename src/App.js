@@ -151,7 +151,7 @@ function App() {
         )}
         <div className="relative z-10 mx-auto max-w-screen-xl px-6 py-12 font-sans md:px-12 md:py-20 lg:px-20 lg:py-0 h-full">
           <div className="lg:flex lg:justify-between lg:gap-2 h-full lg:py-8">
-            <header className="lg:sticky lg:top-0 lg:flex-col sm:flex-row flex-row lg:justify-between lg:w-5/12 md:w-full sm:w-full h-full lg:py-10 sm:h-auto">
+            <header className="lg:sticky lg:top-0 lg:flex-col sm:flex-row flex-row lg:justify-between lg:w-5/12 md:w-full sm:w-full h-full py-4 sm:py-0 lg:py-10 sm:h-auto">
               <div>
                 <div>
                   <h1 className="text-4xl font-bold tracking-tight text-slate-200 sm:text-5xl">

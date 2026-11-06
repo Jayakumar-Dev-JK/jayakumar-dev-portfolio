@@ -2,6 +2,7 @@ import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-li
 import { MemoryRouter } from 'react-router-dom';
 import ProjectsPage from './projects';
 import { fixtureProjects } from './projectsSection.fixture';
+import { releaseDistance } from '../lib/projectsRelease';
 
 // jsdom has no layout, so heights are supplied by mocking offsetHeight; the real scrolling is checked in a
 // browser. These cover the structure, the default category and the measurement-based sticky decision.
@@ -12,6 +13,12 @@ const renderSection = (data = fixtureProjects('full')) =>
       <ProjectsPage data={data} />
     </MemoryRouter>
   );
+
+// jsdom has no layout: give the bar a realistic height and the section a tall one.
+const mockHeights = (section = 5000, bar = 100) =>
+  jest.spyOn(HTMLElement.prototype, 'offsetHeight', 'get').mockImplementation(function () {
+    return this.hasAttribute('data-projects-bar') ? bar : section;
+  });
 
 const items = (container) => container.querySelectorAll('[data-projects-section] > ul > li');
 
@@ -100,13 +107,13 @@ test('cards are visible straight away when the browser cannot observe scrolling'
 });
 
 test('when sticky, the bar releases early and the list margin cancels it, so nothing moves', async () => {
-  jest.spyOn(HTMLElement.prototype, 'offsetHeight', 'get').mockReturnValue(5000);
+  mockHeights();
   const { container } = renderSection();
   const section = container.querySelector('[data-projects-section]');
   await waitFor(() => expect(section).toHaveAttribute('data-sticky', 'on'));
   const bar = container.querySelector('[data-projects-bar]');
   const list = section.querySelector(':scope > ul');
-  const release = Math.round(Number(section.dataset.availableHeight) * 0.45);
+  const release = releaseDistance(Number(section.dataset.availableHeight), 0, bar.offsetHeight);
   expect(release).toBeGreaterThan(100);
   expect(bar.style.marginBottom).toBe(`${release}px`);
   expect(list.style.marginTop).toBe(`-${release}px`);
@@ -171,5 +178,49 @@ describe('categories with no projects get no chip', () => {
     const { container } = renderSection(data);
     expect(screen.queryByRole('group', { name: 'Filter projects by category' })).toBeNull();
     expect(items(container)).toHaveLength(10);
+  });
+});
+
+test('the bar has no background colour (by request) and still pins', async () => {
+  jest.spyOn(HTMLElement.prototype, 'offsetHeight', 'get').mockReturnValue(5000);
+  const { container } = renderSection();
+  const bar = container.querySelector('[data-projects-bar]');
+  await waitFor(() => expect(bar).toHaveClass('sticky'));
+  expect(bar.className).not.toMatch(/bg-/);
+});
+
+test('the list is plain content: no max-height and no scroll box of its own', () => {
+  const { container } = renderSection();
+  const section = container.querySelector('[data-projects-section]');
+  expect(section.querySelector('[data-projects-list]')).toBeNull();
+  section.querySelectorAll('ul, div').forEach((el) => {
+    expect(el.className).not.toMatch(/overflow-y-(auto|scroll)|\bmax-h-/);
+    expect(el.style.maxHeight).toBe('');
+  });
+});
+
+describe('clipping the list under the pinned bar (CSS only)', () => {
+  test('when sticky, the list carries the clip class and the numbers that drive it', async () => {
+    mockHeights();
+    const { container } = renderSection();
+    const section = container.querySelector('[data-projects-section]');
+    await waitFor(() => expect(section).toHaveAttribute('data-sticky', 'on'));
+    const list = section.querySelector('[data-projects-cards]');
+    expect(list).toHaveClass('projects-clip');
+    const bar = container.querySelector('[data-projects-bar]');
+    const release = releaseDistance(Number(section.dataset.availableHeight), 0, bar.offsetHeight);
+    expect(list.style.getPropertyValue('--clip-release')).toBe(`${release}px`);
+    expect(list.style.getPropertyValue('--clip-start')).toMatch(/^\d+px$/);
+    expect(list.style.getPropertyValue('--clip-end')).toMatch(/^\d+px$/);
+  });
+
+  test('when the content fits, there is no clip class and no clip numbers', async () => {
+    jest.spyOn(HTMLElement.prototype, 'offsetHeight', 'get').mockReturnValue(300);
+    const { container } = renderSection();
+    const section = container.querySelector('[data-projects-section]');
+    await waitFor(() => expect(section).toHaveAttribute('data-content-height', '300'));
+    const list = section.querySelector('[data-projects-cards]');
+    expect(list).not.toHaveClass('projects-clip');
+    expect(list.style.getPropertyValue('--clip-start')).toBe('');
   });
 });

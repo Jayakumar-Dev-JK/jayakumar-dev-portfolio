@@ -270,15 +270,17 @@
     line-height: 1.5;
   }
 
-  .ph-note--right-top,
-  .ph-note--right-bottom {
+  .ph-note--right-top {
     left: auto;
     right: 1.2cqw;
   }
 
+  /* The two bottom groups and the handwritten script crowd the phones, the portrait and the dashboard at this
+     size: not shown on phones. */
+  .ph-note--left-bottom,
+  .ph-note--right-bottom,
   .ph-script {
-    top: 23.2cqw;
-    left: 82cqw;
+    display: none;
   }
 }
 
