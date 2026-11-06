@@ -173,3 +173,22 @@ describe('categories with no projects get no chip', () => {
     expect(items(container)).toHaveLength(10);
   });
 });
+
+test('the bar has an opaque background in both states, so cards never show through it while pinned', async () => {
+  jest.spyOn(HTMLElement.prototype, 'offsetHeight', 'get').mockReturnValue(5000);
+  const { container } = renderSection();
+  const bar = container.querySelector('[data-projects-bar]');
+  await waitFor(() => expect(bar).toHaveClass('sticky'));
+  expect(bar).toHaveClass('bg-slate-900');
+  expect(bar).toHaveClass('z-20');
+});
+
+test('the list is plain content: no max-height and no scroll box of its own', () => {
+  const { container } = renderSection();
+  const section = container.querySelector('[data-projects-section]');
+  expect(section.querySelector('[data-projects-list]')).toBeNull();
+  section.querySelectorAll('ul, div').forEach((el) => {
+    expect(el.className).not.toMatch(/overflow-y-(auto|scroll)|\bmax-h-/);
+    expect(el.style.maxHeight).toBe('');
+  });
+});
