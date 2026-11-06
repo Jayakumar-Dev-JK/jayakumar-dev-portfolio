@@ -2,7 +2,7 @@
 > Portfolio of Jayakumar, a UI/UX designer and frontend developer based in Chennai, India. Case studies, design process and product work for web and mobile.
 
 - [Portfolio](https://jayakumarwebdev.netlify.app/): About, experience, tech stack and skills, projects, contact
-- [LinkedIn](https://www.linkedin.com/in/Jayakumar-FullStackDeveloper/)
+- [LinkedIn](https://www.linkedin.com/in/jayakumar-designs/)
 - [GitHub](https://github.com/Jayakumar-Dev-JK)
 - [Figma](https://www.figma.com/@Jayakumar_JK)
 - [Behance](https://www.behance.net/Jayakumar_JK)

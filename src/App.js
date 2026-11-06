@@ -224,7 +224,7 @@ function App() {
                   <li className="mr-5 text-xs shrink-0">
                     <a
                       className="block hover:text-slate-200"
-                      href="https://www.linkedin.com/in/Jayakumar-FullStackDeveloper/"
+                      href="https://www.linkedin.com/in/jayakumar-designs/"
                       target="_blank"
                       rel="noreferrer noopener"
                       aria-label="LinkedIn (opens in a new tab)"
