@@ -79,12 +79,16 @@ test('a failed save removes the uploaded PDF so no orphan file is left', async (
 });
 
 test('the public site only gets a safe published resume', async () => {
-  getDoc.mockResolvedValue({ exists: () => false });
+  const field = (stringValue) => ({ stringValue });
+  global.fetch = jest.fn();
+
+  global.fetch.mockResolvedValueOnce({ status: 404, ok: false });
   expect(await fetchPublishedResume()).toBeNull();
 
-  getDoc.mockResolvedValue({ exists: () => true, data: () => ({ title: 'CV', url: 'javascript:alert(1)', fileName: 'cv.pdf' }) });
+  global.fetch.mockResolvedValueOnce({ status: 200, ok: true, json: async () => ({ fields: { title: field('CV'), url: field('javascript:alert(1)'), fileName: field('cv.pdf') } }) });
   expect(await fetchPublishedResume()).toBeNull();
 
-  getDoc.mockResolvedValue({ exists: () => true, data: () => ({ title: 'CV', url: resume.url, fileName: 'cv.pdf', resumeId: 'r2' }) });
+  global.fetch.mockResolvedValueOnce({ status: 200, ok: true, json: async () => ({ fields: { title: field('CV'), url: field(resume.url), fileName: field('cv.pdf'), resumeId: field('r2') } }) });
   expect(await fetchPublishedResume()).toEqual({ title: 'CV', url: resume.url, fileName: 'cv.pdf' });
 });
+

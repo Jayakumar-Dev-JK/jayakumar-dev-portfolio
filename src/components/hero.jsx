@@ -11,11 +11,14 @@ import desktop from "../assets/portfolio/Neon-Blue-Dark-Mode-Dashboard-Mockup.we
 import desktop300 from "../assets/portfolio/Neon-Blue-Dark-Mode-Dashboard-Mockup-300w.webp";
 import desktop600 from "../assets/portfolio/Neon-Blue-Dark-Mode-Dashboard-Mockup-600w.webp";
 import desktop900 from "../assets/portfolio/Neon-Blue-Dark-Mode-Dashboard-Mockup-900w.webp";
-import portrait from "../assets/portfolio/Confident-Indian-Man-Cutout-with-Gold-Chain.webp";
-import portrait560 from "../assets/portfolio/Confident-Indian-Man-Cutout-with-Gold-Chain-560w.webp";
-import portrait1120 from "../assets/portfolio/Confident-Indian-Man-Cutout-with-Gold-Chain-1120w.webp";
 import orbitLine from "../assets/portfolio/orbit-line.svg";
 import Metrics from "./metrics";
+
+// The portrait is the largest paint, so it lives in public/ under stable names that index.html can preload.
+const PUBLIC = process.env.PUBLIC_URL || "";
+const portrait = `${PUBLIC}/hero/portrait.webp`;
+const portrait560 = `${PUBLIC}/hero/portrait-560w.webp`;
+const portrait1120 = `${PUBLIC}/hero/portrait-1120w.webp`;
 
 // Length of the entrance timeline in hero.css (last annotation ends ~2.95s).
 const ENTRANCE_MS = 3200;

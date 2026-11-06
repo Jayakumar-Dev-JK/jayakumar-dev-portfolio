@@ -1,9 +1,8 @@
 import { collection, doc, getDoc, getDocs, query, serverTimestamp, where, writeBatch } from 'firebase/firestore';
 import { db } from '../lib/firebase';
-import { isFirebaseConfigured } from '../lib/firebaseConfig';
 import { slugify } from '../lib/validation';
-import { TECH_STACK_SEED } from '../data/techStackSeed';
 import { auditWrite } from './auditService';
+import { seedAsCategories } from './publicTechStackService';
 
 // Tech Stack & Skills data layer. The backend is Firestore (client SDK + Security Rules), so
 // "endpoints" are the functions below; writes are protected by firestore.rules (admins only).
@@ -27,42 +26,6 @@ function group(categories, skills) {
     ...category,
     skills: skills.filter((s) => s.categoryId === category.id).sort(bySortOrder),
   }));
-}
-
-function seedAsCategories() {
-  return TECH_STACK_SEED.map((c, ci) => ({
-    id: c.slug,
-    name: c.name,
-    slug: c.slug,
-    icon: c.icon,
-    sortOrder: ci,
-    isActive: true,
-    skills: c.skills.map(([name, icon], si) => ({
-      id: `${c.slug}--${slugify(name)}`,
-      categoryId: c.slug,
-      name,
-      slug: slugify(name),
-      icon,
-      iconUrl: '',
-      iconSvg: '',
-      sortOrder: si,
-      isActive: true,
-    })),
-  }));
-}
-
-/* ---------- Public ---------- */
-
-// Active categories with their active skills, in admin order. Queries must filter on
-// isActive == true because Security Rules are not filters. Categories with no visible
-// skills are dropped. Without Firebase configured (local dev) the starter content is shown.
-export async function fetchPublicTechStack() {
-  if (!isFirebaseConfigured) return seedAsCategories();
-  const [categorySnap, skillSnap] = await Promise.all([
-    getDocs(query(categoriesCol(), where('isActive', '==', true))),
-    getDocs(query(skillsCol(), where('isActive', '==', true))),
-  ]);
-  return group(categorySnap.docs.map(toItem), skillSnap.docs.map(toItem)).filter((c) => c.skills.length > 0);
 }
 
 /* ---------- Admin: read ---------- */
