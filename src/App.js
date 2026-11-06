@@ -203,7 +203,7 @@ function App() {
                   <li className="mr-5 text-xs shrink-0">
                     <a
                       className="block hover:text-slate-200"
-                      href="https://github.com/JayaKumar-FullStackDeveloper"
+                      href="https://github.com/Jayakumar-Dev-JK"
                       target="_blank"
                       rel="noreferrer noopener"
                       aria-label="LinkedIn (opens in a new tab)"
