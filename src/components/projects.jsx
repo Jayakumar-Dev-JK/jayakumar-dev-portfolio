@@ -432,11 +432,13 @@ function ProjectsPage({ data }) {
       style={{ '--projects-top': `${stickyTop}px`, scrollMarginTop: stickyTop }}
     >
       <div ref={sentinelRef} aria-hidden="true" className="-mb-px h-px" />
+      {/* No background on purpose (the owner asked for none): while pinned, cards scroll under the bar and show through it. */}
       <div
         ref={barRef}
         data-projects-bar=""
-        className={`z-20 pb-1.5 transition-[border-color] sm:pb-2 duration-200 lg:-mx-6 lg:px-6 ${sticky ? 'sticky top-[var(--projects-top,0px)]' : 'relative'
-          } border-b ${stuck ? 'border-slate-800' : 'border-transparent'}`}
+        className={`z-20 pb-1.5 transition-[border-color] duration-200 sm:pb-2 lg:-mx-6 lg:px-6 ${
+          sticky ? 'sticky top-[var(--projects-top,0px)]' : 'relative'
+        } border-b ${stuck ? 'border-slate-800' : 'border-transparent'}`}
         style={release ? { marginBottom: release } : undefined}
       >
         <div className="flex items-center justify-between gap-x-3 py-1.5 sm:gap-x-4">
