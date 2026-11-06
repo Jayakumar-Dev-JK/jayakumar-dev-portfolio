@@ -61,7 +61,7 @@ export const IconMarquee = () => {
   const load = useCallback(() => {
     setState((s) => ({ ...s, status: "loading" }));
     // Lazy import keeps Firebase out of the initial bundle.
-    return import("../services/techStackService")
+    return import("../services/publicTechStackService")
       .then((service) => service.fetchPublicTechStack())
       .then((categories) => setState({ status: "ready", categories }))
       .catch(() => setState({ status: "error", categories: [] }));

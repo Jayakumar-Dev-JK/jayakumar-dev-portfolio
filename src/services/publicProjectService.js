@@ -1,7 +1,5 @@
-import { collection, getDocs, query, where } from 'firebase/firestore';
-import { db } from '../lib/firebase';
+import { queryEquals } from '../lib/firestoreRest';
 import { isSafeUrl, videoEmbedUrl, videoFileUrl } from '../lib/validation';
-import { fetchActiveCategories } from './categoryService';
 
 // Maps a project document to the fields the public pages need. Unsafe URLs and unknown video
 // providers are dropped here. The admin preview uses it too, so it shows what visitors will see.
@@ -35,19 +33,20 @@ export function mapPublicProject(id, data) {
   };
 }
 
-const toPublicProject = (snap) => mapPublicProject(snap.id, snap.data());
+const toPublicProject = ({ id, data }) => mapPublicProject(id, data);
+const categoryBySortOrder = (a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0) || a.name.localeCompare(b.name);
 
 const byDisplayOrder = (a, b) =>
   Number(b.featured) - Number(a.featured) || a.sortOrder - b.sortOrder || a.title.localeCompare(b.title);
 
 export async function fetchPublicPortfolio() {
-  const [projectSnap, categories] = await Promise.all([
-    // The status filter is required: Security Rules reject queries that could return drafts.
-    getDocs(query(collection(db, 'projects'), where('status', '==', 'published'))),
-    fetchActiveCategories(),
+  // The filters are required: Security Rules reject queries that could return drafts or inactive categories.
+  const [projectDocs, categoryDocs] = await Promise.all([
+    queryEquals('projects', 'status', 'published'),
+    queryEquals('categories', 'active', true),
   ]);
   return {
-    projects: projectSnap.docs.map(toPublicProject).sort(byDisplayOrder),
-    categories,
+    projects: projectDocs.map(toPublicProject).sort(byDisplayOrder),
+    categories: categoryDocs.map(({ id, data }) => ({ id, ...data })).sort(categoryBySortOrder),
   };
 }

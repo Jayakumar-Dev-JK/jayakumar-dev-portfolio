@@ -4,8 +4,8 @@ import userEvent from '@testing-library/user-event';
 import IconMarquee from './skills';
 import { monogram } from './techIcon';
 
-jest.mock('../services/techStackService', () => ({ fetchPublicTechStack: jest.fn() }));
-const { fetchPublicTechStack } = require('../services/techStackService');
+jest.mock('../services/publicTechStackService', () => ({ fetchPublicTechStack: jest.fn() }));
+const { fetchPublicTechStack } = require('../services/publicTechStackService');
 
 const categories = [
   {
