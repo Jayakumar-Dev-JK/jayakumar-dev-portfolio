@@ -174,13 +174,12 @@ describe('categories with no projects get no chip', () => {
   });
 });
 
-test('the bar has an opaque background in both states, so cards never show through it while pinned', async () => {
+test('the bar has no background colour (by request) and still pins', async () => {
   jest.spyOn(HTMLElement.prototype, 'offsetHeight', 'get').mockReturnValue(5000);
   const { container } = renderSection();
   const bar = container.querySelector('[data-projects-bar]');
   await waitFor(() => expect(bar).toHaveClass('sticky'));
-  expect(bar).toHaveClass('bg-slate-900');
-  expect(bar).toHaveClass('z-20');
+  expect(bar.className).not.toMatch(/bg-/);
 });
 
 test('the list is plain content: no max-height and no scroll box of its own', () => {
