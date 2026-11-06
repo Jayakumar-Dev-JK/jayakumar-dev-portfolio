@@ -3,6 +3,6 @@
 
 - [Portfolio](https://jayakumarwebdev.netlify.app/): About, experience, tech stack and skills, projects, contact
 - [LinkedIn](https://www.linkedin.com/in/Jayakumar-FullStackDeveloper/)
-- [GitHub](https://github.com/JayaKumar-FullStackDeveloper)
+- [GitHub](https://github.com/Jayakumar-Dev-JK)
 - [Figma](https://www.figma.com/@Jayakumar_JK)
 - [Behance](https://www.behance.net/Jayakumar_JK)
