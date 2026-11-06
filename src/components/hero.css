@@ -261,6 +261,27 @@
   }
 }
 
+/* Phones: the annotation text is already at its minimum size, but its positions still scale with the stage, so
+   the groups drift into each other and off the edge. Tighten the lettering further, anchor the right-hand groups
+   to the right edge (so they can never run off it) and give the handwritten script room under the top-right group. */
+@container (max-width: 440px) {
+  .ph-note {
+    letter-spacing: 0.07em;
+    line-height: 1.5;
+  }
+
+  .ph-note--right-top,
+  .ph-note--right-bottom {
+    left: auto;
+    right: 1.2cqw;
+  }
+
+  .ph-script {
+    top: 23.2cqw;
+    left: 82cqw;
+  }
+}
+
 /* ==========================================================================
    Entrance timeline (~3s, runs once while data-anim="run")
    0.0 light · 0.2 headline · 0.8 phones · 1.15 desktop · 1.65 portrait ·
