@@ -181,6 +181,41 @@ function renderProjectPage(shell, project, siteUrl = DEFAULT_SITE_URL) {
   return html.replace(/<div id="root"><\/div>/, () => `<div id="root">${bodyHtml(project)}</div>`);
 }
 
+// ---------- home page ----------
+
+const HOME_INTRO =
+  'Jayakumar is a UI/UX designer and frontend developer based in Chennai, India. He designs and builds intuitive, user-centred web and mobile products, from Figma case studies to production React interfaces.';
+
+// Visually hidden (the real page is drawn by React) but present in the HTML, so crawlers that read the
+// raw HTML see the same name, intro and project links a visitor sees after the app loads.
+const VISUALLY_HIDDEN =
+  'position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0';
+
+function homeBodyHtml(projects, siteUrl) {
+  const items = projects
+    .filter((p) => SLUG_PATTERN.test(p.slug || ''))
+    .map(
+      (p) =>
+        `<li><a href="${escapeHtml(siteUrl)}/projects/${escapeHtml(p.slug)}">${escapeHtml(p.title)}</a>` +
+        `${p.shortDescription ? ` - ${escapeHtml(p.shortDescription)}` : ''}</li>`
+    )
+    .join('');
+  return (
+    `<main data-prerendered="home" style="${VISUALLY_HIDDEN}">` +
+    `<h1>Jayakumar - UI/UX Designer &amp; Frontend Developer</h1>` +
+    `<p>${escapeHtml(HOME_INTRO)}</p>` +
+    `<nav aria-label="Sections"><a href="/#about">About</a> <a href="/#experience">Experience</a> ` +
+    `<a href="/#projects">Projects</a> <a href="/#contact">Contact</a></nav>` +
+    (items ? `<h2>Projects</h2><ul>${items}</ul>` : '') +
+    `</main>`
+  );
+}
+
+// The home page keeps its own head tags (they are already right in index.html); only the body gains content.
+function renderHomePage(shell, projects, siteUrl = DEFAULT_SITE_URL) {
+  return shell.replace(/<div id="root"><\/div>/, () => `<div id="root">${homeBodyHtml(projects, siteUrl)}</div>`);
+}
+
 function renderNotFoundPage(shell) {
   const title = `Page not found | ${SITE_NAME}`;
   let html = replaceOrAppend(shell, /<title>[\s\S]*?<\/title>/i, `<title>${escapeHtml(title)}</title>`);
@@ -251,6 +286,7 @@ module.exports = {
   socialImage,
   buildProjectHead,
   renderProjectPage,
+  renderHomePage,
   renderNotFoundPage,
   buildSitemap,
   fetchPublishedProjects,

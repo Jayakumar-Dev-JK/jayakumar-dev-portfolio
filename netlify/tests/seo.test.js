@@ -3,6 +3,7 @@ const test = require('node:test');
 const assert = require('node:assert');
 const seo = require('../lib/seo');
 const { createHandler: createPageHandler } = require('../functions/project-page');
+const { createHandler: createHomeHandler } = require('../functions/home-page');
 const { createHandler: createSitemapHandler } = require('../functions/sitemap');
 
 const SHELL = `<!doctype html><html lang="en"><head><meta charset="utf-8"/><title>Home</title>
@@ -259,4 +260,41 @@ test('a malformed address is a 404, never an error', async () => {
     const res = await createPageHandler({ fetchImpl: fakeFetch(), env: ENV })({ path, headers: { host: 'x.netlify.app' } });
     assert.strictEqual(res.statusCode, 404, path);
   }
+});
+
+test('renderHomePage adds an h1, intro and crawlable project links, and escapes text', () => {
+  const projects = [
+    seo.parseProject(WHY_WEDS),
+    seo.parseProject(doc({ slug: str('bad slug!'), title: str('Skipped') })),
+    seo.parseProject(doc({ slug: str('x-y'), title: str('<b>X</b>'), shortDescription: str('a & b') })),
+  ];
+  const html = seo.renderHomePage(SHELL, projects, 'https://jayakumarwebdev.netlify.app');
+  assert.match(html, /<h1>Jayakumar - UI\/UX Designer &amp; Frontend Developer<\/h1>/);
+  assert.match(html, /href="https:\/\/jayakumarwebdev\.netlify\.app\/projects\/why-weds"/);
+  assert.match(html, /href="https:\/\/jayakumarwebdev\.netlify\.app\/projects\/x-y">&lt;b&gt;X&lt;\/b&gt;<\/a> - a &amp; b/);
+  assert.doesNotMatch(html, /Skipped/);
+  assert.match(html, /<title>Home<\/title>/);
+});
+
+test('home-page serves the enriched shell, and the plain shell when Firestore fails', async () => {
+  const shellRes = { ok: true, text: async () => SHELL };
+  const good = createHomeHandler({
+    env: { FIREBASE_PROJECT_ID: 'p' },
+    fetchImpl: async (url) => (String(url).endsWith('/index.html') ? shellRes : { ok: true, json: async () => [{ document: WHY_WEDS }] }),
+  });
+  const ok = await good({ headers: { host: 'jayakumarwebdev.netlify.app' } });
+  assert.strictEqual(ok.statusCode, 200);
+  assert.match(ok.body, /data-prerendered="home"/);
+  assert.match(ok.body, /\/projects\/why-weds/);
+
+  const bad = createHomeHandler({
+    env: { FIREBASE_PROJECT_ID: 'p' },
+    fetchImpl: async (url) => (String(url).endsWith('/index.html') ? shellRes : { ok: false, status: 500 }),
+  });
+  const plain = await bad({ headers: { host: 'jayakumarwebdev.netlify.app' } });
+  assert.strictEqual(plain.statusCode, 200);
+  assert.strictEqual(plain.body, SHELL);
+
+  const noShell = createHomeHandler({ env: {}, fetchImpl: async () => ({ ok: false, status: 500 }) });
+  assert.strictEqual((await noShell({ headers: {} })).statusCode, 302);
 });
