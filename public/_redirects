@@ -1,6 +1,8 @@
 # Netlify rules run top to bottom; the "!" forces a rule even when a static file exists.
 # Live sitemap built from the published projects.
 /sitemap.xml        /.netlify/functions/sitemap                  200!
+# Home page with real text and links to every project (the plain shell has none).
+/                   /.netlify/functions/home-page                200!
 # One page per project: real title, description and content for search engines.
 /projects/:slug     /.netlify/functions/project-page             200!
 /projects           /#projects                                   301
