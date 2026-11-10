@@ -1,4 +1,4 @@
-import { addDoc, deleteDoc, doc, getDoc, writeBatch } from 'firebase/firestore';
+import { addDoc, deleteDoc, doc, writeBatch } from 'firebase/firestore';
 import { deleteCloudinaryFile, uploadToCloudinary } from './mediaService';
 import { deleteResume, publishResume, renameResume, uploadResume, validateResumeTitle } from './resumeService';
 import { fetchPublishedResume } from './publicResumeService';

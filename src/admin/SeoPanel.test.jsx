@@ -1,7 +1,6 @@
 import { fireEvent, render, screen, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { PagePreview, SeoBadge, SeoPanel } from './SeoPanel';
-import { ProjectDetails } from '../pages/ProjectPage';
 
 const input = {
   title: 'Why Weds',
