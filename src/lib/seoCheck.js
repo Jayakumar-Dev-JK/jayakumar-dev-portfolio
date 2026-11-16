@@ -8,7 +8,7 @@
 
 const words = (text) => String(text || '').trim().split(/\s+/).filter(Boolean).length;
 
-export const CONTENT_GOOD_WORDS = 150;
+export const CONTENT_GOOD_WORDS = 100;
 export const CONTENT_THIN_WORDS = 60;
 const SHORT_MIN = 70;
 const SHORT_MAX = 160;

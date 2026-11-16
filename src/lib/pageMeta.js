@@ -4,7 +4,7 @@ import { useEffect } from 'react';
 // (netlify/lib/seo.js) so crawlers and the browser agree - keep the two in sync.
 export const SITE_NAME = 'Jayakumar';
 export const SITE_URL = 'https://jayakumarwebdev.netlify.app';
-const TITLE_MAX = 70;
+const TITLE_MAX = 50;
 const DESCRIPTION_MAX = 158;
 
 const collapse = (value) => String(value ?? '').replace(/\s+/g, ' ').trim();

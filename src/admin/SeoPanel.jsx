@@ -121,7 +121,7 @@ export function SeoPanel({ input, type }) {
       </div>
 
       <div className="mt-4 space-y-3">
-        <LengthMeter label="Page title" value={title.length} min={25} max={70} />
+        <LengthMeter label="Page title" value={title.length} min={20} max={50} />
         <LengthMeter label="Description" value={description.length} min={70} max={158} />
       </div>
 
