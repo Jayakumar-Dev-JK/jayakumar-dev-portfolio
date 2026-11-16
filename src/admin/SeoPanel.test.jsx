@@ -44,9 +44,9 @@ test('length meters say in words whether the title and description fit', () => {
   render(<SeoPanel input={{ ...input, title: 'Why Weds wedding events planner' }} type="Development" />);
   const [title, description] = screen.getAllByRole('meter');
   expect(title).toHaveAttribute('aria-valuetext', expect.stringMatching(/characters\. Good length\.$/));
-  // A 62-character description is under the 70-character target.
-  expect(description).toHaveAttribute('aria-valuetext', expect.stringMatching(/A bit short\.$/));
-  expect(description).toHaveAttribute('aria-valuemax', '158');
+  // A 62-character description is inside the 50-138 character target.
+  expect(description).toHaveAttribute('aria-valuetext', expect.stringMatching(/Good length\.$/));
+  expect(description).toHaveAttribute('aria-valuemax', '138');
 });
 
 test('there is one Google preview and no desktop/mobile switch', () => {

@@ -10,7 +10,7 @@ export const SLUG_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 export const LIMITS = {
   title: 120,
   slug: 80,
-  shortDescription: 300,
+  shortDescription: 280,
   description: 5000,
   previousSlugs: 20,
   techStack: 20,

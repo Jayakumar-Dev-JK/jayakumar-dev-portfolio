@@ -7,8 +7,8 @@
 const SITE_NAME = 'Jayakumar';
 const DEFAULT_SITE_URL = 'https://jayakumarwebdev.netlify.app';
 const SLUG_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
-const TITLE_MAX = 70;
-const DESCRIPTION_MAX = 158;
+const TITLE_MAX = 50;
+const DESCRIPTION_MAX = 138;
 
 const ESCAPES = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
 const escapeHtml = (value) => String(value ?? '').replace(/[&<>"']/g, (c) => ESCAPES[c]);
@@ -80,7 +80,7 @@ function seoTitle(title) {
 
 function seoDescription(project) {
   let text = project.shortDescription;
-  if (text.length < 110 && project.description) text = `${text} ${collapse(project.description)}`.trim();
+  if (text.length < 90 && project.description) text = `${text} ${collapse(project.description)}`.trim();
   if (!text) text = `${project.title} - a ${project.type.toLowerCase()} project by ${SITE_NAME}.`;
   return clip(text, DESCRIPTION_MAX);
 }

@@ -5,7 +5,7 @@ import { useEffect } from 'react';
 export const SITE_NAME = 'Jayakumar';
 export const SITE_URL = 'https://jayakumarwebdev.netlify.app';
 const TITLE_MAX = 50;
-const DESCRIPTION_MAX = 158;
+const DESCRIPTION_MAX = 138;
 
 const collapse = (value) => String(value ?? '').replace(/\s+/g, ' ').trim();
 
@@ -24,7 +24,7 @@ export function seoTitle(title) {
 
 export function seoDescription({ title, type, description, fullDescription }) {
   let text = collapse(description);
-  if (text.length < 110 && fullDescription) text = `${text} ${collapse(fullDescription)}`.trim();
+  if (text.length < 90 && fullDescription) text = `${text} ${collapse(fullDescription)}`.trim();
   if (!text) text = `${title} - a ${String(type || 'web').toLowerCase()} project by ${SITE_NAME}.`;
   return clip(text, DESCRIPTION_MAX);
 }
