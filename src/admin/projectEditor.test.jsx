@@ -11,7 +11,6 @@ jest.mock('../services/projectService', () => ({
   ValidationError: class ValidationError extends Error {},
   archiveProject: jest.fn(),
   createProject: jest.fn(),
-  createSamplePost: jest.fn(),
   getProject: jest.fn(),
   importLegacyProjects: jest.fn(),
   listProjects: jest.fn(),

@@ -1,7 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { LEGACY_PROJECTS } from '../data/legacyProjects';
-import { SAMPLE_POST } from '../data/samplePost';
 import {
   isSafeUrl,
   LINK_TYPES,
@@ -21,7 +20,6 @@ import {
   ConflictError,
   createProject,
   getProject,
-  createSamplePost,
   importLegacyProjects,
   listProjects,
   permanentlyDeleteProject,
@@ -46,7 +44,6 @@ import {
   FaExternalLinkAlt,
   FaFileImport,
   FaList,
-  FaMagic,
   FaPalette,
   FaPen,
   FaPlus,
@@ -248,7 +245,6 @@ export function ProjectsList() {
   const clearFilters = () => setFilters((f) => ({ ...f, type: 'all', category: 'all', featured: false, search: '' }));
 
   const legacyMissing = LEGACY_PROJECTS.some((l) => !data.projects.some((p) => p.slug === l.slug));
-  const sampleMissing = !data.projects.some((p) => p.slug === SAMPLE_POST.slug);
 
   // Runs an action with optional confirmation, then reports the outcome as a toast.
   const run = async (id, action, { dialog, success, undo } = {}) => {
@@ -389,18 +385,6 @@ export function ProjectsList() {
       success: 'Original projects imported and published.',
     });
 
-  const runSample = () =>
-    run('sample', async () => {
-      if (!(await createSamplePost(uid))) throw new Error('The sample post already exists.');
-    }, {
-      dialog: {
-        title: 'Add a sample post?',
-        description: 'Publishes a 3-image poster post under Design → Others so you can try the popup. Delete it once your own work is in.',
-        confirmLabel: 'Add sample post',
-      },
-      success: 'Sample post published. Open the portfolio, go to Design → Others and click it.',
-    });
-
   const tabClass = (on) =>
     `inline-flex h-8 items-center gap-2 rounded-full border px-3 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-admin-accent max-md:min-h-11 ${
       on ? 'border-admin-accent-border bg-admin-accent-bg text-admin-accent-text' : 'border-admin-border text-admin-body hover:text-admin-accent'
@@ -427,12 +411,6 @@ export function ProjectsList() {
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
-          {data.status === 'ready' && sampleMissing && (
-            <button type="button" className={buttonClass.secondary} onClick={runSample} disabled={busyId === 'sample'}>
-              <Icon as={FaMagic} size={14} />
-              {busyId === 'sample' ? 'Adding…' : 'Add sample post'}
-            </button>
-          )}
           {data.status === 'ready' && legacyMissing && (
             <button type="button" className={buttonClass.secondary} onClick={runImport} disabled={busyId === 'import'}>
               <Icon as={FaFileImport} size={14} />
@@ -543,7 +521,7 @@ export function ProjectsList() {
           }
         >
           {data.projects.length === 0
-            ? 'Add your first project, or try the sample post to see the popup.'
+            ? 'Add your first project to get started.'
             : 'Try another status tab or clear the filters.'}
         </EmptyState>
       )}

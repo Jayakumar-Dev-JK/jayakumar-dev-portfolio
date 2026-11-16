@@ -136,11 +136,3 @@ test('posts need at least one safe image to publish', () => {
   expect(validateProject(ok, { publish: true, categories })).toEqual({}); // first image stands in for the cover
   expect(validateProject({ ...validDraft, display: 'popup' }, { categories })).toHaveProperty('display');
 });
-
-test('the sample post is publishable with the default categories', () => {
-  // eslint-disable-next-line global-require
-  const { SAMPLE_POST } = require('../data/samplePost');
-  // eslint-disable-next-line global-require
-  const { DEFAULT_CATEGORIES } = require('../data/legacyProjects');
-  expect(validateProject(SAMPLE_POST, { publish: true, categories: DEFAULT_CATEGORIES })).toEqual({});
-});
