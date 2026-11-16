@@ -184,7 +184,7 @@ function renderProjectPage(shell, project, siteUrl = DEFAULT_SITE_URL) {
 // ---------- home page ----------
 
 const HOME_INTRO =
-  'Jayakumar is a UI/UX designer and frontend developer based in Chennai, India. He designs and builds intuitive, user-centred web and mobile products, from Figma case studies to production React interfaces.';
+  'Jayakumar is a UI/UX and product designer in Chennai, India, designing web, mobile and SaaS products. Explore design case studies and product work.';
 
 // Visually hidden (the real page is drawn by React) but present in the HTML, so crawlers that read the
 // raw HTML see the same name, intro and project links a visitor sees after the app loads.
@@ -202,7 +202,7 @@ function homeBodyHtml(projects, siteUrl) {
     .join('');
   return (
     `<main data-prerendered="home" style="${VISUALLY_HIDDEN}">` +
-    `<h1>Jayakumar - UI/UX Designer &amp; Frontend Developer</h1>` +
+    `<h1>Jayakumar - UI/UX Designer</h1>` +
     `<p>${escapeHtml(HOME_INTRO)}</p>` +
     `<nav aria-label="Sections"><a href="/#about">About</a> <a href="/#experience">Experience</a> ` +
     `<a href="/#projects">Projects</a> <a href="/#contact">Contact</a></nav>` +

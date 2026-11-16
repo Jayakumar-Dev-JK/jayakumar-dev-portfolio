@@ -269,7 +269,7 @@ test('renderHomePage adds an h1, intro and crawlable project links, and escapes 
     seo.parseProject(doc({ slug: str('x-y'), title: str('<b>X</b>'), shortDescription: str('a & b') })),
   ];
   const html = seo.renderHomePage(SHELL, projects, 'https://jayakumarwebdev.netlify.app');
-  assert.match(html, /<h1>Jayakumar - UI\/UX Designer &amp; Frontend Developer<\/h1>/);
+  assert.match(html, /<h1>Jayakumar - UI\/UX Designer<\/h1>/);
   assert.match(html, /href="https:\/\/jayakumarwebdev\.netlify\.app\/projects\/why-weds"/);
   assert.match(html, /href="https:\/\/jayakumarwebdev\.netlify\.app\/projects\/x-y">&lt;b&gt;X&lt;\/b&gt;<\/a> - a &amp; b/);
   assert.doesNotMatch(html, /Skipped/);
