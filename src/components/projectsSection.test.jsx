@@ -24,10 +24,13 @@ const items = (container) => container.querySelectorAll('[data-projects-section]
 
 afterEach(() => jest.restoreAllMocks());
 
-test('shows the data it is given instead of fetching, opening on Websites for Design', () => {
+// Projects in the fixture that sit in the Web App category (the Design tab opens on it).
+const WEB_APP_COUNT = fixtureProjects('full').projects.filter((p) => p.type === 'Design' && p.categoryIds.includes('web-app')).length;
+
+test('shows the data it is given instead of fetching, opening on Web App for Design', () => {
   const { container } = renderSection();
-  expect(screen.getByRole('button', { name: /Websites/ })).toHaveAttribute('aria-pressed', 'true');
-  expect(items(container)).toHaveLength(7);
+  expect(screen.getByRole('button', { name: /Web App/ })).toHaveAttribute('aria-pressed', 'true');
+  expect(items(container)).toHaveLength(WEB_APP_COUNT);
   fireEvent.click(screen.getByRole('button', { name: 'Development' }));
   expect(screen.getByRole('button', { name: /Web Apps/ })).toHaveAttribute('aria-pressed', 'true');
   expect(items(container)).toHaveLength(4);
@@ -39,11 +42,11 @@ test('there is no "All" chip, only real categories', () => {
   expect(chips.map((c) => c.textContent.replace(/\d+$/, ''))).toEqual(['Web App', 'Mobile App', 'Websites', 'Others']);
 });
 
-test('falls back to the first category with projects when Websites is empty', () => {
+test('falls back to the first category with projects when Web App is empty', () => {
   const data = fixtureProjects('full');
-  data.projects = data.projects.filter((p) => !p.categoryIds.includes('websites'));
+  data.projects = data.projects.filter((p) => !p.categoryIds.includes('web-app'));
   renderSection(data);
-  // Web App is empty without its Websites projects too, so the first chip with projects is Mobile App.
+  // With no Web App projects, the first chip with projects is Mobile App.
   expect(screen.getByRole('button', { name: /Mobile App/ })).toHaveAttribute('aria-pressed', 'true');
 });
 
@@ -53,7 +56,7 @@ test('the chips filter, and switching Design/Development goes back to the defaul
   expect(items(container)).toHaveLength(3);
   fireEvent.click(screen.getByRole('button', { name: 'Development' }));
   fireEvent.click(screen.getByRole('button', { name: 'Design' }));
-  expect(screen.getByRole('button', { name: /Websites/ })).toHaveAttribute('aria-pressed', 'true');
+  expect(screen.getByRole('button', { name: /Web App/ })).toHaveAttribute('aria-pressed', 'true');
 });
 
 test('the heading and every tab live in one bar, so they are pinned together', () => {
@@ -169,7 +172,7 @@ describe('categories with no projects get no chip', () => {
         <ProjectsPage data={withoutCategory(full, 'others')} />
       </MemoryRouter>
     );
-    expect(screen.getByRole('button', { name: /Websites/ })).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByRole('button', { name: /Web App/ })).toHaveAttribute('aria-pressed', 'true');
     expect(items(container).length).toBeGreaterThan(0);
   });
 

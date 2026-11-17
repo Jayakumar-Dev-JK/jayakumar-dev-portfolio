@@ -307,11 +307,11 @@ export function ProjectCard({ project, onOpen, reveal, scrollMargin }) {
   );
 }
 
-// The category to show first in a tab: "Websites" when it has projects, otherwise the first category that
+// The category to show first in a tab: "Web App" when it has projects, otherwise the first category that
 // does. There is no "All" chip, so every tab always opens on a real category.
 function defaultCategory(projects, chips) {
   const filled = (id) => projects.some((p) => p.categoryIds.includes(id));
-  return (chips.find((c) => c.id === 'websites' && filled(c.id)) || chips.find((c) => filled(c.id)) || chips[0])?.id ?? null;
+  return (chips.find((c) => c.id === 'web-app' && filled(c.id)) || chips.find((c) => filled(c.id)) || chips[0])?.id ?? null;
 }
 
 // `data` replaces the Firestore data (used by the tests).
