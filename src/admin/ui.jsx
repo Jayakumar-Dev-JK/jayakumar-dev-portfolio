@@ -600,15 +600,18 @@ export function Icon({ as: Glyph, size = 18, className = '' }) {
 // Portfolio owner, shown in the admin shell and account menu.
 export const OWNER = { name: 'Jayakumar', initials: 'JK', role: 'UI/UX Designer' };
 
-// Portfolio logo: "JK" monogram tile in the admin accent.
+// Final portfolio logo, shared with the browser and app icons.
 export function BrandMark({ size = 36 }) {
   return (
-    <svg width={size} height={size} viewBox="0 0 36 36" aria-hidden="true" focusable="false" className="shrink-0">
-      <rect x="0.5" y="0.5" width="35" height="35" rx="10" fill="rgba(45,212,191,.1)" stroke="rgba(45,212,191,.4)" />
-      <text x="18" y="23.5" textAnchor="middle" fontSize="14" fontWeight="700" letterSpacing="0.5" fill="#5EEAD4" fontFamily="Inter, 'Segoe UI', system-ui, sans-serif">
-        JK
-      </text>
-    </svg>
+    <img
+      src={`${process.env.PUBLIC_URL}/logo192.png`}
+      width={size}
+      height={size}
+      alt=""
+      aria-hidden="true"
+      draggable="false"
+      className="shrink-0 rounded-[20%] object-contain"
+    />
   );
 }
 
